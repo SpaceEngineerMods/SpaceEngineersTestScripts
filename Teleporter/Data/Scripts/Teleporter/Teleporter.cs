@@ -15,6 +15,7 @@ using Sandbox.ModAPI.Interfaces;
 
 namespace Teleporter
 {
+    //testing
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Door))]
     public class Teleporter : MyGameLogicComponent
     {
