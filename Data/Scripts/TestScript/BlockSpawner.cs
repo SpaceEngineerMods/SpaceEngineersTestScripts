@@ -51,20 +51,18 @@ namespace TestScript
 
             // We want to spawn ore and throw it at entity which entered sensor
             MyObjectBuilder_CubeGrid floatingBuilder = new MyObjectBuilder_CubeGrid();
+            Sandbox.ModAPI.IMyCubeBlock test = new Sandbox.ModAPI.IMyCubeBlock();
             
             
-           
             floatingBuilder.PersistentFlags = MyPersistentEntityFlags2.InScene; // Very important
-            floatingBuilder.PositionAndOrientation = new MyPositionAndOrientation()
-            {
-                Position = Sensor.WorldMatrix.Translation + Sensor.WorldMatrix.Forward * 1.5f, // Spawn ore 1.5m in front of the sensor
-                Forward = Sensor.WorldMatrix.Forward,
-                Up = Sensor.WorldMatrix.Up,
-            };
+            VRageMath.Vector3 pos = new VRageMath.Vector3(Sensor.Position.X * 1.5f, Sensor.Position.Y *2,Sensor.Position.Z);
+                                                           
+              
+            test.SetPosition( pos);
 
             var floatingObject = Sandbox.ModAPI.MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(floatingBuilder);
 
-            // Now it only creates ore, we will throw it later
+            
         }
 
         public override void MarkForClose(){}

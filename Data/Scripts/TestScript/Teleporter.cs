@@ -168,6 +168,8 @@ namespace Teleporter
                     // TODO set player orientation
                     // Enable gate shutdown timer
                     WasUsed = true;
+                    
+                   
                 }
                
                 
@@ -243,7 +245,7 @@ namespace Teleporter
                 // THen find the closest.
                 if (distance == 0.0d || (entrance_g.GetPosition() - gate.FatBlock.GetPosition()).Length() < distance)
                 {
-                   nearest = gate.FatBlock as IMyDoor;
+                    nearest = gate.FatBlock as IMyDoor;
                     distance = (entrance_g.GetPosition() - gate.FatBlock.GetPosition()).Length();
                 }
             }
