@@ -15,10 +15,16 @@ using Sandbox.ModAPI.Interfaces;
 
 namespace Teleporter
 {
+<<<<<<< HEAD
     //master
+=======
+    //testing
+>>>>>>> Testing
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_Door))]
     public class Teleporter : MyGameLogicComponent
     {
+        TeleportationManager man = new TeleportationManager();
+
         IMyDoor entrance_g = null;
         public IMyDoor exit_g = null;
         bool isportal = false;
@@ -51,7 +57,7 @@ namespace Teleporter
 
         public override void UpdateAfterSimulation()
         {
-
+            
         }
         public override void UpdateAfterSimulation10()
         {
@@ -71,6 +77,10 @@ namespace Teleporter
                 m_timer = 0;
                 isactive = true;
                 MyAPIGateway.Utilities.ShowNotification("Cooldown Finished", 2500);
+                man.ActivatePortal(entrance_g);
+                man.ActivatePortal(exit_g);
+                man.GetInactivePortals();
+                
             }
 
             if (isactive && WasUsed)
@@ -112,8 +122,9 @@ namespace Teleporter
             string myname = entrance_g.CustomName;
 
             isportal = myname != null && myname.Contains("Portal");
+            
 
-
+           
 
             if (isportal)
             {
@@ -152,23 +163,14 @@ namespace Teleporter
                 
                 if (distance < 1.8f &&  isactive && exit_g != null)
                 {
-                    MyAPIGateway.Utilities.ShowNotification("This is a portal", 1000, MyFontEnum.Red);
-                    VRageMath.Vector3 pos = exit_g.GetPosition();
-                    if (player.Entity.EntityId == MyAPIGateway.Session.Player.PlayerCharacter.Entity.EntityId)
-                    {
-                        pos += (exit_g.WorldMatrixNormalizedInv.Forward * 2);
-                        pos += (exit_g.WorldMatrixNormalizedInv.Down * 2);
-                    }
-                    else
-                    {
-                        pos += (exit_g.WorldMatrixNormalizedInv.Forward * 10);
-                    }
 
-                    player.Entity.GetTopMostParent().SetPosition(pos);
+                    if (man.Teleportplayer(entrance_g, exit_g, player))
+                    {
+                        WasUsed = true;
+                        isactive = false;
+                    }
+                    
 
-                    // TODO set player orientation
-                    // Enable gate shutdown timer
-                    WasUsed = true;
                     
                    
                 }
@@ -259,5 +261,7 @@ namespace Teleporter
         
 
     }
+    
+
 
 }
