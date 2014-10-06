@@ -49,9 +49,6 @@ cubeGrid.ColorBlocks(cubeGrid.Min, cubeGrid.Max, c);
 }
 }
 public override void UpdateOnceBeforeFrame() { }
-<<<<<<< HEAD
+
 }
 // testing
-=======
-}
->>>>>>> df8841478e159126af1be9b5c89191d777b23db0
