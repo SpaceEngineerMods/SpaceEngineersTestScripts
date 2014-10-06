@@ -50,3 +50,4 @@ cubeGrid.ColorBlocks(cubeGrid.Min, cubeGrid.Max, c);
 }
 public override void UpdateOnceBeforeFrame() { }
 }
+// testing
