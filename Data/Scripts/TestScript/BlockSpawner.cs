@@ -51,9 +51,9 @@ namespace TestScript
 
             // We want to spawn ore and throw it at entity which entered sensor
             MyObjectBuilder_CubeGrid floatingBuilder = new MyObjectBuilder_CubeGrid();
-            MyObjectBuilder_CubeBlock testblock = new MyObjectBuilder_CubeBlock();
-            testblock.TypeId = "Door";
-            floatingBuilder.CubeBlocks.Add();
+            
+            
+           
             floatingBuilder.PersistentFlags = MyPersistentEntityFlags2.InScene; // Very important
             floatingBuilder.PositionAndOrientation = new MyPositionAndOrientation()
             {
