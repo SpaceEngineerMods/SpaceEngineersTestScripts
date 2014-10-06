@@ -36,7 +36,7 @@ namespace Teleporter
             }
             else
             {
-
+                // Actual Teleportaion Code
                 MyAPIGateway.Utilities.ShowNotification("This is a portal", 1000, MyFontEnum.Red);
                 VRageMath.Vector3 pos = exit_p.GetPosition();
                 if (player.Entity.EntityId == MyAPIGateway.Session.Player.PlayerCharacter.Entity.EntityId)
