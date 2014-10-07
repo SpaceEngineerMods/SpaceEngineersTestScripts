@@ -192,7 +192,8 @@ namespace Teleporter
                 try
                 {
                     grid.GetBlocks(blocks, (x) => x.FatBlock is IMyDoor && 
-                                                  (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Portal"));
+                                                  (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Portal") && 
+                                                  man.isActive(x.FatBlock));
                     
                 }
                 catch

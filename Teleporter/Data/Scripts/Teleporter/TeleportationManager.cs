@@ -71,6 +71,13 @@ namespace Teleporter
             
 
         }
+        public bool isActive(Sandbox.ModAPI.IMyCubeBlock gate)
+        {
+            if (DisabledPortals.Contains(gate.EntityId.ToString()))
+                return true;
+            else
+                return false;
+        }
 
         public void GetInactivePortals()
         {
