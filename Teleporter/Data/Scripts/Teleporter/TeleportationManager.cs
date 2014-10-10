@@ -43,6 +43,8 @@ namespace Teleporter
                 {
                     pos += (exit_p.WorldMatrixNormalizedInv.Forward * 2);
                     pos += (exit_p.WorldMatrixNormalizedInv.Down * 2);
+                  
+
                 }
                 else
                 {
