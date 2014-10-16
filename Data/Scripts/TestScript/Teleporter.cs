@@ -168,6 +168,8 @@ namespace Teleporter
                     // TODO set player orientation
                     // Enable gate shutdown timer
                     WasUsed = true;
+                    isactive = false;
+                    MyAPIGateway.Utilities.ShowNotification("Cooldown starting", 2500);
                 }
                
                 
