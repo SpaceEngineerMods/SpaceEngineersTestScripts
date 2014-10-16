@@ -43,6 +43,8 @@ namespace Teleporter
                 {
                     pos += (exit_p.WorldMatrixNormalizedInv.Forward * 2);
                     pos += (exit_p.WorldMatrixNormalizedInv.Down * 2);
+                  
+
                 }
                 else
                 {
@@ -70,6 +72,13 @@ namespace Teleporter
                 DisabledPortals = DisabledPortals.Remove(indexofportal, len);
             
 
+        }
+        public bool isActive(Sandbox.ModAPI.IMyCubeBlock gate)
+        {
+            if (DisabledPortals.Contains(gate.EntityId.ToString()))
+                return true;
+            else
+                return false;
         }
 
         public void GetInactivePortals()

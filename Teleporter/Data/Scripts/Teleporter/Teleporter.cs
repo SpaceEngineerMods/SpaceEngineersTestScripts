@@ -50,6 +50,11 @@ namespace Teleporter
                 Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
             }
 
+            
+           
+            VRageRender.MyRenderMessagePlayVideo cool = new VRageRender.MyRenderMessagePlayVideo();
+            cool.VideoFile = "Big_Gun_01";
+            cool.Volume = 1.0f;
 
             //LogMessage(myDoor.LocalAABB.ToString(), false);
             //LogMessage(myDoor.LocalMatrix.ToString(), false);
@@ -196,7 +201,8 @@ namespace Teleporter
                 try
                 {
                     grid.GetBlocks(blocks, (x) => x.FatBlock is IMyDoor && 
-                                                  (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Portal"));
+                                                  (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Portal") && 
+                                                  man.isActive(x.FatBlock));
                     
                 }
                 catch
