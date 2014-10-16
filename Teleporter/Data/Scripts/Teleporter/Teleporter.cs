@@ -143,7 +143,7 @@ namespace Teleporter
 
                 //Sandbox.ModAPI.MyAPIGateway.Utilities.ShowNotification("UpdateBeforeSimulation10", 100);
 
-                var player = MyAPIGateway.Session.Player.PlayerCharacter;
+                var player = MyAPIGateway.Session.Player.Client as IMyControllableEntity;
 
                 if (MyAPIGateway.Session.Player.Controller.ControlledEntity != null)
                     player = MyAPIGateway.Session.Player.Controller.ControlledEntity;
