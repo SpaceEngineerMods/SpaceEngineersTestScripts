@@ -42,9 +42,25 @@ namespace Teleporter
                 // Actual Teleportaion Code
 
                 VRageMath.Vector3 pos = exit_p.GetPosition();//creates a 3D vector of the exit
-                
+
+                //call up heading of of exit and save
+                VRageMath.MyBlockOrientation exitpos = exit_p.Orientation;
+
+                //call up heading of entrance and save
+                VRageMath.MyBlockOrientation entrancepos = entrance_p.Orientation;
+
+                //these are block orientations, also need to call up the full ship/station headings to complete calculations
+                //call up exit ship's tilts
+                //call up entrance ship's tilts
+
+                //given orrientation and case switch to determine which 90 degree modifier setting the player is coming out of, calculate actual exit headings
+
+                //same with entrance headings
+
                 if (player.Entity.EntityId == MyAPIGateway.Session.Player.PlayerID)// checks if entity is the player going through the portal
                 {
+                    //get difference of player heading from entrance heading, and add it to exit heading
+
 
                     pos += (exit_p.WorldMatrixNormalizedInv.Forward * 2);//grabs the coordinate of exit +2
 
@@ -53,8 +69,9 @@ namespace Teleporter
                 }
 
                 player.Entity.GetTopMostParent().SetPosition(pos);//teleports player to coordinates of exit
+                //set player orientation given calculations
+                // TODO set player orientation above, I dont know how to call up the tilt angles
 
-                // TODO set player orientation
                 // Enable gate shutdown timer
 
                 DisabledPortals += " " + exit_p.EntityId + " " + entrance_p.EntityId;// adds strings of exit and entrance to the disabled list

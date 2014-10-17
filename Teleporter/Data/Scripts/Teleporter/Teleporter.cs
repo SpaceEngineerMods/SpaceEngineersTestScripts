@@ -115,6 +115,14 @@ namespace Teleporter//teleporter namespace
                 //MyAPIGateway.Utilities.ShowNotification("Is portal");    
                 exit_g = GetNearestGateOnDifferentGrid(entrance_g);//get nearest other gate,on a different grid from entrance_g
 
+                /*if (exit_g == null)// if there is not a portal that this is connected to
+                {
+                    entrance_g; do not know how to call up open and close settings for door
+                }
+                else
+                {
+                    
+                }*/
                 var player = MyAPIGateway.Session.Player.Client as IMyControllableEntity;//creates variable player, inherets playercharacter position
 
                 if (MyAPIGateway.Session.Player.Controller.ControlledEntity != null)//Makes sure Controlled Entity is a player
@@ -186,16 +194,15 @@ namespace Teleporter//teleporter namespace
             foreach (var gate in gateList)//for each gate in gateList(every active door)
             {
 
-                if (gate.IsDestroyed || !gate.FatBlock.IsFunctional || gate.FatBlock.GetTopMostParent().EntityId == sourceGate.GetTopMostParent().EntityId)//Skip disabled, or destroyed gates
+                if (gate.IsDestroyed || !((gate.FatBlock as IMyDoor).Enabled)/* I think this means that the door is on, not off in settings */ || !gate.FatBlock.IsFunctional || (sourceGate.GetPosition() == gate.FatBlock.GetPosition()))//Skip disabled, or activated or destroyed gates
 
                     continue;//skips current gate in gateList, goes onto next gate
+                    if ((distance == 0.0d || (sourceGate.GetPosition() - gate.FatBlock.GetPosition()).Length() < distance) && (sourceGate.CustomName == (gate.FatBlock as IMyTerminalBlock).CustomName)) //if it is the first gate checked or it is closest gate so far and if the thing has the same name
+                    {
+                        nearest = gate.FatBlock as IMyDoor;//sets this gate as the closest
 
-                if (distance == 0.0d || (sourceGate.GetPosition() - gate.FatBlock.GetPosition()).Length() < distance)//if it is the first gate checked or it is closest gate so far
-                {
-                    nearest = gate.FatBlock as IMyDoor;//sets this gate as the closest
-
-                    distance = (entrance_g.GetPosition() - gate.FatBlock.GetPosition()).Length();//sets distance to length of closest gate
-                }
+                        distance = (entrance_g.GetPosition() - gate.FatBlock.GetPosition()).Length();//sets distance to length of closest gate
+                    }
             }
 
             return nearest;//returns the closest gate checked
@@ -203,7 +210,15 @@ namespace Teleporter//teleporter namespace
         }// end of get nearest gate
 
 
-
+        // To Do List for tomorrow:
+        //door opens when link is formed, door shuts when link is closed
+        // New portal block that is not shaped like a door, has a contact zone that does not count as a wall collision, just showy.
+        //Give new portal block a crafting recipe, other stuff along that line. Things it needs to function in game.
+        //new portal consumes power when activated, consumes more power on teleport, and on maintaining link. When block is off portal is off
+        //instead of cooldown, when someone teleports they cannot go back through the portal unless they loose contact with the portal contact zone, in which case they can re-enter
+        // Inheret relative motion and tilts when passing through portal
+        //portal can do other small entities, bullets, rockets, items, rocks, ect
+        //Instead of a distance check, relies on antenna connection to determine where it is allowed to teleport
 
 
 
