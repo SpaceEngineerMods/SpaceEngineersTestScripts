@@ -110,7 +110,7 @@ namespace Teleporter//teleporter namespace
 
             isportal = myname != null && myname.Contains("Portal"); //if my name contains portal, isportal = true
 
-            if (isportal)//if isportal is true
+            if (isportal && isactive)//if isportal is true
             {
                 //MyAPIGateway.Utilities.ShowNotification("Is portal");    
                 exit_g = GetNearestGateOnDifferentGrid(entrance_g);//get nearest other gate,on a different grid from entrance_g
