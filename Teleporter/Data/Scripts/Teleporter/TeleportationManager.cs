@@ -40,7 +40,7 @@ namespace Teleporter
             {
                 //MyAPIGateway.Utilities.ShowNotification("Portals Not inactive");
                 // Actual Teleportaion Code
-
+                           
                 VRageMath.Vector3 pos = exit_p.GetPosition();//creates a 3D vector of the exit
 
                 //call up heading of of exit and save
