@@ -39,7 +39,7 @@ namespace Teleporter
                 // Actual Teleportaion Code
                 MyAPIGateway.Utilities.ShowNotification("This is a portal", 1000, MyFontEnum.Red);
                 VRageMath.Vector3 pos = exit_p.GetPosition();
-                if (player.Entity.EntityId == MyAPIGateway.Session.Player.PlayerCharacter.Entity.EntityId)
+                if (player.Entity.EntityId == MyAPIGateway.Session.Player.PlayerID)
                 {
                     pos += (exit_p.WorldMatrixNormalizedInv.Forward * 2);
                     pos += (exit_p.WorldMatrixNormalizedInv.Down * 2);
