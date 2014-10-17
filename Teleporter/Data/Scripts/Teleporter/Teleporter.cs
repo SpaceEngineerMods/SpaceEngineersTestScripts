@@ -224,6 +224,10 @@ namespace Teleporter//teleporter namespace
         {
 
         }
+        public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false)// Does nothing
+        {
+            return entrance_g as MyObjectBuilder_EntityBase;
+        }
 
 
     }//end of class
