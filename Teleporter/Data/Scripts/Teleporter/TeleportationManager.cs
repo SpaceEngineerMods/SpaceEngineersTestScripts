@@ -22,7 +22,7 @@ namespace Teleporter
     //Does the teleportaion Process
     //Controls the cool down of the portals
 
-    public class TeleportationManager : MyGameLogicComponent//creates teleportation manager, based on MyGameLogicComponent
+    public class TeleportationManager//creates teleportation manager
     {
 
         static String DisabledPortals = "";//stores enitity id's of the disabled portals
