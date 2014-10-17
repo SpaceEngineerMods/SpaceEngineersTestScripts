@@ -30,42 +30,27 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.QualityTools.Testing.Fakes, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Sandbox.Common">
-      <HintPath>$(steam)\steamapps\common\SpaceEngineers\Bin\Sandbox.Common.dll</HintPath>
+      <HintPath>D:\Steam\steamapps\common\SpaceEngineers\Bin\Sandbox.Common.dll</HintPath>
     </Reference>
     <Reference Include="Sandbox.Game">
-      <HintPath>$(steam)\steamapps\common\SpaceEngineers\Bin\Sandbox.Game.dll</HintPath>
+      <HintPath>D:\Steam\steamapps\common\SpaceEngineers\Bin\Sandbox.Game.dll</HintPath>
     </Reference>
-    <Reference Include="System">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Core">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Xml.Linq">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Data.DataSetExtensions">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.CSharp">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Data">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System.Xml">
-      <Private>True</Private>
-    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
     <Reference Include="VRage.Common">
-      <HintPath>$(steam)\steamapps\common\SpaceEngineers\Bin\VRage.Common.dll</HintPath>
+      <HintPath>D:\Steam\steamapps\common\SpaceEngineers\Bin\VRage.Common.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Library">
-      <HintPath>$(steam)\steamapps\common\SpaceEngineers\Bin\VRage.Library.dll</HintPath>
+      <HintPath>D:\Steam\steamapps\common\SpaceEngineers\Bin\VRage.Library.dll</HintPath>
     </Reference>
     <Reference Include="VRage.Math">
-      <HintPath>$(steam)\steamapps\common\SpaceEngineers\Bin\VRage.Math.dll</HintPath>
+      <HintPath>D:\Steam\steamapps\common\SpaceEngineers\Bin\VRage.Math.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
