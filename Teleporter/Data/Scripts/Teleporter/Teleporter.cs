@@ -48,9 +48,7 @@ namespace Teleporter
 
             
            
-            VRageRender.MyRenderMessagePlayVideo cool = new VRageRender.MyRenderMessagePlayVideo();
-            cool.VideoFile = "Big_Gun_01";
-            cool.Volume = 1.0f;
+           
 
             //LogMessage(myDoor.LocalAABB.ToString(), false);
             //LogMessage(myDoor.LocalMatrix.ToString(), false);
