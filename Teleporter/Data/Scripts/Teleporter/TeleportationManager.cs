@@ -58,24 +58,25 @@ namespace Teleporter
                 // Enable gate shutdown timer
 
                 DisabledPortals += " " + exit_p.EntityId + " " + entrance_p.EntityId;// adds strings of exit and entrance to the disabled list
-                //MyAPIGateway.Utilities.ShowNotification("Teleporting Player");
+                MyAPIGateway.Utilities.ShowNotification("Teleporting Player");
                 return true;// return true, teleportation actually happened
             }  
         }
 
 
         //Removes the specified portal from the disabled list
-        public void ActivatePortal(IMyDoor portal)//removes portals from disabled list when 
+        public void ActivatePortal(IMyDoor portal = null)//removes portals from disabled list when 
         {
-            if(!DisabledPortals.Contains(portal.EntityId.ToString()))//if portal Id isnt in disabled list
+            
+            if(portal == null || !DisabledPortals.Contains(portal.EntityId.ToString()) )//if portal Id isnt in disabled list
                 return;//return blank
 
-            int len = portal.EntityId.ToString().Length;//length of the portal string
+            //int len = portal.EntityId.ToString().Length;//length of the portal string
 
-            int indexofportal = DisabledPortals.IndexOf(portal.EntityId.ToString());//finds position of first character in a portal id
+            //int indexofportal = DisabledPortals.IndexOf(portal.EntityId.ToString());//finds position of first character in a portal id
 
-            if(indexofportal != -1)//check if the above actually works
-                DisabledPortals = DisabledPortals.Remove(indexofportal, len);//deletes portal id from string
+            //if(indexofportal != -1)//check if the above actually works
+                //DisabledPortals = DisabledPortals.Remove(indexofportal, len);//deletes portal id from string
             
 
         }

@@ -75,7 +75,7 @@ namespace Teleporter//teleporter namespace
 
                 isactive = true;//set isactive to true
 
-                MyAPIGateway.Utilities.ShowNotification("Cooldown Finished", 2500);//hud notification
+                MyAPIGateway.Utilities.ShowNotification("Cooldown Finished");//hud notification
 
                 man.ActivatePortal(entrance_g);//activates portal entrance_g
 
@@ -85,7 +85,7 @@ namespace Teleporter//teleporter namespace
 
             if (isactive && WasUsed)//beginning of cooldown
             {
-                MyAPIGateway.Utilities.ShowNotification("Cooldown starting", 2500);//hud notification
+                MyAPIGateway.Utilities.ShowNotification("Cooldown starting");//hud notification
             } 
         }
 
@@ -98,7 +98,7 @@ namespace Teleporter//teleporter namespace
         public override void UpdateBeforeSimulation10()//rewriting the door update stuff, activating every 10 frames
         {
 
-            if (entrance_g == null)//if no entrance g, do nothing
+            if (entrance_g == null)//iz
 
                 return;//do nothing
 
@@ -108,7 +108,7 @@ namespace Teleporter//teleporter namespace
 
             string myname = entrance_g.CustomName;//create string myname, name of door
 
-            //isportal = myname != null && myname.Contains("Portal"); //if my name contains portal, isportal = true
+            isportal = myname != null && myname.Contains("Portal"); //if my name contains portal, isportal = true
 
             if (isportal)//if isportal is true
             {
@@ -123,7 +123,7 @@ namespace Teleporter//teleporter namespace
 
                 float distance = (player.Entity.GetPosition() - entrance_g.GetPosition()).Length();//distance is a three part vector, is equal to the distance from the player to the portal node
                 //MyAPIGateway.Utilities.ShowNotification("Distance = " + distance);
-                MyAPIGateway.Utilities.ShowNotification((exit_g == null).ToString());
+                //MyAPIGateway.Utilities.ShowNotification((exit_g == null).ToString());
                 if (distance < 1.8f &&  isactive && exit_g != null)//if the distance is less than 1.8f(whatever that is) and both the entrance and exit exist and are operational
                 {
                     //MyAPIGateway.Utilities.ShowNotification("Will Teleport");
