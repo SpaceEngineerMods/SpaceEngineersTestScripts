@@ -21,8 +21,7 @@ namespace Teleporter
 
     //Does the teleportaion Process
     //Controls the cool down of the portals
-
-    public class TeleportationManager//creates teleportation manager
+    public class TeleportationManager: MyGameLogicComponent//creates teleportation manager
     {
 
         static String DisabledPortals = "";//stores enitity id's of the disabled portals
@@ -41,7 +40,7 @@ namespace Teleporter
                 // Actual Teleportaion Code
 
                 VRageMath.Vector3 pos = exit_p.GetPosition();//creates a 3D vector of the exit
-
+                MyAPIGateway.Utilities.ShowNotification("Called Teleporter");
                 if (player.Entity.EntityId == MyAPIGateway.Session.Player.PlayerID)// checks if entity is the player going through the portal
                 {
 
@@ -57,7 +56,7 @@ namespace Teleporter
                 // Enable gate shutdown timer
 
                 DisabledPortals += " " + exit_p.EntityId + " " + entrance_p.EntityId;// adds strings of exit and entrance to the disabled list
-
+                MyAPIGateway.Utilities.ShowNotification("Teleporting Player");
                 return true;// return true, teleportation actually happened
             }  
         }
@@ -85,6 +84,11 @@ namespace Teleporter
 
             else//otherwise
                 return false;//return false
+        }
+        // Does Nothing
+        public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false)
+        {
+            return null;
         }
     }
 }
