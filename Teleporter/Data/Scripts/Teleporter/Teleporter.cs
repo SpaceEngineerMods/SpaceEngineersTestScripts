@@ -108,11 +108,11 @@ namespace Teleporter//teleporter namespace
 
             string myname = entrance_g.CustomName;//create string myname, name of door
 
-            isportal = myname != null && myname.Contains("Portal"); //if my name contains portal, isportal = true
+            //isportal = myname != null && myname.Contains("Portal"); //if my name contains portal, isportal = true
 
             if (isportal)//if isportal is true
             {
-                    
+                //MyAPIGateway.Utilities.ShowNotification("Is portal");    
                 exit_g = GetNearestGateOnDifferentGrid(entrance_g);//get nearest other gate,on a different grid from entrance_g
 
                 var player = MyAPIGateway.Session.Player.Client as IMyControllableEntity;//creates variable player, inherets playercharacter position
@@ -122,10 +122,11 @@ namespace Teleporter//teleporter namespace
                     player = MyAPIGateway.Session.Player.Controller.ControlledEntity;//player is a controlled entity
 
                 float distance = (player.Entity.GetPosition() - entrance_g.GetPosition()).Length();//distance is a three part vector, is equal to the distance from the player to the portal node
-                
+                //MyAPIGateway.Utilities.ShowNotification("Distance = " + distance);
+                MyAPIGateway.Utilities.ShowNotification((exit_g == null).ToString());
                 if (distance < 1.8f &&  isactive && exit_g != null)//if the distance is less than 1.8f(whatever that is) and both the entrance and exit exist and are operational
                 {
-
+                    //MyAPIGateway.Utilities.ShowNotification("Will Teleport");
                     if (man.Teleportplayer(entrance_g, exit_g, player))//no idea what this says
                     {
                         WasUsed = true;//set portal wasused to true
@@ -185,11 +186,11 @@ namespace Teleporter//teleporter namespace
             foreach (var gate in gateList)//for each gate in gateList(every active door)
             {
 
-                if (gate.IsDestroyed || !gate.FatBlock.IsFunctional ||gate.FatBlock.GetTopMostParent().EntityId == sourceGate.GetTopMostParent().EntityId)//Skip disabled, or destroyed gates
+                if (gate.IsDestroyed || !gate.FatBlock.IsFunctional || gate.FatBlock.GetTopMostParent().EntityId == sourceGate.GetTopMostParent().EntityId)//Skip disabled, or destroyed gates
 
                     continue;//skips current gate in gateList, goes onto next gate
 
-                if (distance == 0.0d || (entrance_g.GetPosition() - gate.FatBlock.GetPosition()).Length() < distance)//if it is the first gate checked or it is closest gate so far
+                if (distance == 0.0d || (sourceGate.GetPosition() - gate.FatBlock.GetPosition()).Length() < distance)//if it is the first gate checked or it is closest gate so far
                 {
                     nearest = gate.FatBlock as IMyDoor;//sets this gate as the closest
 
