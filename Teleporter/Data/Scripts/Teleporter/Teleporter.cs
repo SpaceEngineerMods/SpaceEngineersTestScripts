@@ -137,6 +137,47 @@ namespace Teleporter//teleporter namespace
                     //MyAPIGateway.Utilities.ShowNotification("Will Teleport");
                     if (man.Teleportplayer(entrance_g, exit_g, player))//no idea what this says
                     {
+                        //test code plz ignore
+
+                        
+                        
+                        try
+                        {
+                            
+
+                            var blueprints = MyDefinitionManager.Static.GetPrefabDefinitions();
+                            var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage("Prefabs.txt",typeof(String));
+                            foreach(var ship in blueprints)
+                            {
+                                writer.Write(ship.Value.Id.ToString()+ "/n");
+                            }
+                            
+                            
+                           
+                            
+                              
+                            
+            
+                           
+                            
+
+                           // var grid = prefab.CubeGrids[0];
+
+
+                            //grid.PositionAndOrientation = new MyPositionAndOrientation(new VRageMath.Vector3(0, 0, 0), VRageMath.Vector3.Forward, VRageMath.Vector3.Up);
+                            
+
+                            //var entity = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(grid);
+                            
+                        }
+                        catch
+                        {
+                            MyAPIGateway.Utilities.ShowNotification("Well it didnt work");
+                        }
+
+                        //test code plz ignore
+
+
                         WasUsed = true;//set portal wasused to true
 
                         isactive = false;//turn off isactive, starts cooldown
