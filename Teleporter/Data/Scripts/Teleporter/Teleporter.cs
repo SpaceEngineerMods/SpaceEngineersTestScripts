@@ -149,7 +149,7 @@ namespace Teleporter//teleporter namespace
                             var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage("Prefabs.txt",typeof(String));
                             foreach(var ship in blueprints)
                             {
-                                writer.Write(ship.Value.Id.ToString()+ "/n");
+                                writer.Write(ship.Value.Id.ToString()+ "\n");
                             }
                             
                             
