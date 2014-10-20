@@ -143,31 +143,51 @@ namespace Teleporter//teleporter namespace
                         
                         try
                         {
-                            
+                            //do not delete
+                            /*
+                            var blueprints = MyDefinitionManager.Static.GetAllDefinitions();
 
-                            var blueprints = MyDefinitionManager.Static.GetPrefabDefinitions();
-                            var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage("Prefabs.txt",typeof(String));
+                            var writer = MyAPIGateway.Utilities.WriteFileInLocalStorage("definitions.txt",typeof(String));
                             foreach(var ship in blueprints)
                             {
-                                writer.Write(ship.Value.Id.ToString()+ "\n");
+                                writer.Write(ship.Id.ToString()+ "\n");
                             }
+                            */
+                            
+                            // Makes a quternion object that controls the doors relatibe position and orientation to the other blocks 
+                            Sandbox.Common.ObjectBuilders.VRageData.SerializableQuaternion Orient = new Sandbox.Common.ObjectBuilders.VRageData.SerializableQuaternion(0.5f, 0, 0, 0);//x,y,z,w
+
+                            //Creates a door object builder and sets its build percent to 100 percent and its orientation to orient.
+                            MyObjectBuilder_Door test = new MyObjectBuilder_Door() {BuildPercent= 100 , Orientation = Orient};
+                            
+                            //Creates a cubegrid builder(a ship) 
+                            MyObjectBuilder_CubeGrid cube = new MyObjectBuilder_CubeGrid();
+                            cube.CubeBlocks.Add(test);// adds the door to the cube grid
+                            cube.PersistentFlags = MyPersistentEntityFlags2.InScene;//sets the cubegrid as visisble and existant
+
                             
                             
+                            //test code for debuging/ future reference  DO NOT DELETE in this branch
+                            //VRageMath.Quaternion e_orient;
+                            //entrance_g.Orientation.GetQuaternion(out e_orient);
+                           ///MyAPIGateway.Utilities.ShowMessage("Debug", "W "+e_orient.W + " X " + e_orient.X + " Y " + e_orient.Y + " Z " + e_orient.Z + " ");
+                            //foreach(var cubbie in cube.CubeBlocks)
+                           // {
+                                //MyAPIGateway.Utilities.ShowMessage("Debug", cubbie.BlockOrientation.Forward.ToString() +"\n" + exit_g.Orientation.Forward.ToString());                         
+                            
+                           // }
                            
-                            
-                              
-                            
-            
-                           
-                            
 
-                           // var grid = prefab.CubeGrids[0];
+                            //var prefab = MyDefinitionManager.Static.GetPrefabDefinition("Fighter");//Find fighter prefab
+
+                            //var grid = prefab.CubeGrids[0];//get the 1st cubegrid from fighter prefab
 
 
-                            //grid.PositionAndOrientation = new MyPositionAndOrientation(new VRageMath.Vector3(0, 0, 0), VRageMath.Vector3.Forward, VRageMath.Vector3.Up);
-                            
+                            //grid.PositionAndOrientation = new MyPositionAndOrientation(new VRageMath.Vector3(0, 0, 0), VRageMath.Vector3.Forward, VRageMath.Vector3.Up);//set its position and orientation
+                            cube.PositionAndOrientation = new MyPositionAndOrientation(new VRageMath.Vector3(0, 0, 0), VRageMath.Vector3.Forward, VRageMath.Vector3.Up);//Set its position and orentation
 
-                            //var entity = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(grid);
+                            //var entity = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(grid);// Add it to the scene
+                            var newship = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(cube);// addit to the scene( it can now be reference via the "newship" variable
                             
                         }
                         catch
