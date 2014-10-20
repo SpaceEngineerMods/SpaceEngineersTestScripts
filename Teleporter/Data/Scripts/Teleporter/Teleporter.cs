@@ -37,6 +37,7 @@ namespace Teleporter//teleporter namespace
 
         private int m_timer = 0;//timer
 
+        
         public override void Close()//Door state Changed
         {
             entrance_g.DoorStateChanged -= DoorSateChanged;//Closes the door
@@ -80,6 +81,7 @@ namespace Teleporter//teleporter namespace
                 man.ActivatePortal(entrance_g);//activates portal entrance_g
 
                 man.ActivatePortal(exit_g);//activates portal exit_g
+                
                 
             }
 
@@ -154,15 +156,31 @@ namespace Teleporter//teleporter namespace
                             }
                             */
                             
-                            // Makes a quternion object that controls the doors relatibe position and orientation to the other blocks 
-                            Sandbox.Common.ObjectBuilders.VRageData.SerializableQuaternion Orient = new Sandbox.Common.ObjectBuilders.VRageData.SerializableQuaternion(0.5f, 0, 0, 0);//x,y,z,w
-
+                            // Makes a quternion object that controls the doors orientation 
+                            Sandbox.Common.ObjectBuilders.VRageData.SerializableQuaternion d_Orient = new Sandbox.Common.ObjectBuilders.VRageData.SerializableQuaternion(0, 0,0 , 0);//x,y,z,w
+                            
+                            VRageMath.Quaternion quad = new VRageMath.Quaternion(0, -1, 0, 0);//base block orientato
+                            Sandbox.Common.ObjectBuilders.VRageData.SerializableBlockOrientation b_Orient = new Sandbox.Common.ObjectBuilders.VRageData.SerializableBlockOrientation(VRageMath.Base6Directions.Direction.Forward,VRageMath.Base6Directions.Direction.Up);
+                            
+                            
                             //Creates a door object builder and sets its build percent to 100 percent and its orientation to orient.
-                            MyObjectBuilder_Door test = new MyObjectBuilder_Door() {BuildPercent= 100 , Orientation = Orient};
+                            MyObjectBuilder_Door test = new MyObjectBuilder_Door() {BuildPercent= 100 , 
+                                                                                    Orientation = d_Orient,
+                                                                                    CustomName = "Portal Block", 
+                                                                                    Min = new VRageMath.Vector3I(0,0,0)};
+                            //Same as above but for base block
+                            MyObjectBuilder_CubeBlock bat = new MyObjectBuilder_CubeBlock() { BlockOrientation = b_Orient, 
+                                                                                              BuildPercent = 100, 
+                                                                                              Orientation = quad, 
+                                                                                              SubtypeName = "LargeBlockArmorBlock", 
+                                                                                              Min = new VRageMath.Vector3I(0,-1,0) };
                             
                             //Creates a cubegrid builder(a ship) 
                             MyObjectBuilder_CubeGrid cube = new MyObjectBuilder_CubeGrid();
+                            
                             cube.CubeBlocks.Add(test);// adds the door to the cube grid
+                            cube.CubeBlocks.Add(bat);// adds the block under the door
+                            
                             cube.PersistentFlags = MyPersistentEntityFlags2.InScene;//sets the cubegrid as visisble and existant
 
                             
@@ -188,6 +206,7 @@ namespace Teleporter//teleporter namespace
 
                             //var entity = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(grid);// Add it to the scene
                             var newship = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(cube);// addit to the scene( it can now be reference via the "newship" variable
+                            
                             
                         }
                         catch
