@@ -33,12 +33,10 @@ namespace ForceField
         bool isFFP = false;
         List<long> Sowners = new List<long>();
         List<long> Bowners = new List<long>();
-        List<IMyEntity> FFBlocks = new List<IMyEntity>();
-
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
             _ObjectBuilder = objectBuilder;
-            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
+            Entity.NeedsUpdate |=MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME  | MyEntityUpdateEnum.EACH_100TH_FRAME;
             
             FFP = Entity as IMyBeacon;
         }
@@ -48,16 +46,6 @@ namespace ForceField
             return _ObjectBuilder;
         }
 
-        public override void Close()
-        {
-            //Delete the forcefield
-            foreach (var ffb in FFBlocks)
-            {
-                ffb.Delete();
-
-            }
-            FFBlocks.Clear();
-        }
 
         public override void UpdateAfterSimulation100()
         {
@@ -73,35 +61,28 @@ namespace ForceField
                 }
                 catch
                 { }
-                //Clear ForceFields
-                foreach (var ffb in FFBlocks)
-                {
-                    ffb.Delete();
-
-                }
-                FFBlocks.Clear();
+     
+            
                 
             }
         }
 
-        public override void UpdateBeforeSimulation10()
+
+
+        public override void UpdateAfterSimulation10()
         {
+            //cycles through acceptable entitiyes
             if (isFFP)
             {
                 
-                //find the acceptable entites
                 List<IMyEntity> Ships = AcceptableEntites();
-                
-                //cycles through acceptable entitiyes
-
-                foreach(var ship in Ships)
+                foreach (var ship in Ships)
                 {
                     CreateFFforEntity(ship);
                 }
+            }
 
-            }  
         }
-        
         private List<IMyEntity> AcceptableEntites()
         {
 
@@ -167,7 +148,7 @@ namespace ForceField
             
 
      
-            VRageMath.Vector3 impulseDirect= -500*(BeaconPos-ShipPos);
+            VRageMath.Vector3 impulseDirect= -2000*(BeaconPos-ShipPos);
             ship.Physics.ApplyImpulse(impulseDirect,ship.Physics.CenterOfMassWorld);
 
                        
