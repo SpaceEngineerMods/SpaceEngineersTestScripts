@@ -160,118 +160,22 @@ namespace ForceField
 
             //Direction of the ship relative to the FForcefield projector will be used for later 
             VRageMath.Vector3D ShipPos = ship.WorldAABB.Center - FFP.GetTopMostParent().WorldAABB.Center;
-            VRageMath.Base6Directions.Direction Shipdirect = FFP.GetTopMostParent().LocalMatrix.GetClosestDirection(ShipPos);
 
             //Direction of the projector relative to the ship will be used later
             VRageMath.Vector3D BeaconPos = FFP.GetTopMostParent().WorldAABB.Center - ship.WorldAABB.Center;
-            VRageMath.Base6Directions.Direction direct = ship.LocalMatrix.GetClosestDirection(BeaconPos);
-            
-
-            //MyAPIGateway.Utilities.ShowMessage("Console God", "DirectionS = " + direct + " DirectionF = " + Shipdirect);
-            //MyAPIGateway.Utilities.ShowMessage("Conosle God" , ship.WorldAABB.Max.X.ToString() + " " + ship.WorldAABB.Max.Y.ToString() + " " + ship.WorldAABB.Max.Z.ToString());
-            //MyAPIGateway.Utilities.ShowMessage("Console God", ship.WorldAABB.Size.X.ToString() + " " + ship.WorldAABB.Size.Z.ToString() + " " + ship.WorldAABB.Size.Y.ToString());
-
-            //Finds the position where the ff should spawn
-            VRageMath.Vector3D FFBpos = findIntersectSphereLine(ship.GetTopMostParent().GetPosition(), FFP.GetPosition(), FFP.GetPosition(), activationRange);
-            //Temp size
-            VRageMath.Vector3D Size = new VRageMath.Vector3D(1,1,1);
-
-            // bool too see if the ff should spawn
-            bool createFF = true;
-            
            
-            //go through all of the blocks that the forcefield has spawned and see if it contains coordiates of where the ff should spawn, if it does dont spawn it
-            foreach(var ffblock in FFBlocks)
-            {
-
-                VRageMath.ContainmentType cont = ffblock.WorldAABB.Contains(FFBpos);
-                if(cont == VRageMath.ContainmentType.Contains || cont == VRageMath.ContainmentType.Intersects)
-                {
-                    createFF = false;
-                }
-            }
-            //create the ff if  it can
-            if(createFF)
-                FFBlocks.Add(SpawnForceField(FFBpos, Size));
             
+
+     
+            VRageMath.Vector3 impulseDirect= -500*(BeaconPos-ShipPos);
+            ship.Physics.ApplyImpulse(impulseDirect,ship.Physics.CenterOfMassWorld);
+
                        
             
             
         }
 
 
-        private IMyEntity SpawnForceField(VRageMath.Vector3D pos , VRageMath.Vector3  size)
-        {
-            
-            List<MyObjectBuilder_CubeBlock> blocks = new List<MyObjectBuilder_CubeBlock>();
-            //width of the blocks
-            for (int x = 0; x < 1; x++)
-            {
-                // height of the blocks
-                for (int y = 0; y < 1; y++)
-                {
-                    //depth of the blocks
-                    for (int z = 0; z <1; z++)
-                    {
-                        //Add a light armour block to the list
-                        blocks.Add(new MyObjectBuilder_CubeBlock(){BuildPercent = 100,
-                                                                   SubtypeName = "LargeBlockArmorBlock",
-                                                                   Min = new VRageMath.Vector3I(x,y,z)
-                                                                   });
-                    }
-                }
 
-            }
-            
-            //create a grid and add the block list to it
-            MyObjectBuilder_CubeGrid grid = new MyObjectBuilder_CubeGrid();
-            grid.CubeBlocks.AddList(blocks);
-            grid.PersistentFlags = MyPersistentEntityFlags2.InScene; 
-            grid.PositionAndOrientation = new MyPositionAndOrientation(pos,FFP.GetTopMostParent().WorldMatrix.Forward,FFP.WorldMatrix.Up);
-            grid.IsStatic = true;
-            //spawn the ff and return it
-            var entity = MyAPIGateway.Entities.CreateFromObjectBuilderAndAdd(grid);
-            return entity;
-        }
-
-
-
-        private VRageMath.Vector3D findIntersectSphereLine(VRageMath.Vector3D point1 , VRageMath.Vector3D point2, VRageMath.Vector3D CircleC, double radius)
-        {
-            // we create a line from the ffprojector to the targent entity and see where it intersects a sphere around the ffprojector, that point is the point where we will spawn the ff
-
-            //assignment for easier math
-            double x0 = point1.X;
-            double x1 = point2.X;
-            double xc = CircleC.X;
-            double y0 = point1.Y;
-            double y1 = point2.Y;
-            double yc = CircleC.Y;
-            double z0 = point1.Z;
-            double z1 = point2.Z;
-            double zc = CircleC.Z;
-
-            //Math
-            double C = Math.Pow((x0 - xc),2) + Math.Pow((y0 - yc),2) + Math.Pow((z0 - zc),2)- Math.Pow(radius ,2);
-            double A = Math.Pow((x0 - x1), 2) + Math.Pow((y0 - y1), 2) + Math.Pow((z0 - z1), 2); 
-            double B = Math.Pow((x1 - xc), 2) + Math.Pow((y1 - yc), 2) + Math.Pow((z1 - zc), 2) - A - C - Math.Pow(radius, 2);
-            
-            //quadratic formula
-            double t1 = (-B + Math.Sqrt(Math.Pow(B, 2) - (4 * A * C))) / (2 * A);
-            double t2 = (-B - Math.Sqrt(Math.Pow(B, 2) - (4 * A * C))) / (2 * A);
-            double t = 0;
-
-            //if t > 0 && t < 1 then the line intersects the spher, we do this because there are two possible solution to the quadratic formula and we want to know the right one
-            if (t1 > 0 && t1 < 1) 
-                t = t1;
-            else if (t2 > 0 && t2 < 1) 
-                t = t2;
-            //MyAPIGateway.Utilities.ShowNotification(t.ToString() + " " + t1.ToString() + " " + t2.ToString() + " " + A.ToString() + " " + B.ToString() + " " + C.ToString());
-            VRageMath.Vector3D Point = new VRageMath.Vector3D();
-            Point.X = x0*(1-t) + t*x1;
-            Point.Y = y0*(1-t) + t*y1;
-            Point.Z = z0*(1-t) + t*z1;
-            return Point;
-        }
     }
 }
