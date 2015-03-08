@@ -31,10 +31,9 @@ namespace ForceField
         double activationRange = 80;
         double detectionRange = 180;
         bool isFFP = false;
-        List<long> Sowners = new List<long>();
-        List<long> Bowners = new List<long>();
-
-        double FFpowerMult = .7;
+        HashSet<IMyFaction> Bfaction = new HashSet<IMyFaction>();
+        
+        double FFpowerMult = 0.5;
         double FFpower = 100;
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
@@ -56,16 +55,22 @@ namespace ForceField
             
             if(isFFP)
             {
+
                 //tries to find both "big and small owners will throw exeption if it does not have owners
                 try
                 {
-                    Sowners = (FFP.GetTopMostParent() as Sandbox.ModAPI.IMyCubeGrid).SmallOwners;
-                    Bowners = (FFP.GetTopMostParent() as Sandbox.ModAPI.IMyCubeGrid).BigOwners;
+                    List<long> Sowners = (FFP.GetTopMostParent() as Sandbox.ModAPI.IMyCubeGrid).SmallOwners;
+                    IMyFactionCollection factions = MyAPIGateway.Session.Factions;
+                    foreach(var play in Sowners)
+                    {
+                        Bfaction.Add(factions.TryGetPlayerFaction(play));
+                    }
                 }
+
                 catch
                 { }
 
-                detectionRange =(activationRange * 2.5);
+                detectionRange =(activationRange * 3);
                 
             }
         }
@@ -108,24 +113,15 @@ namespace ForceField
                     //checks to see if a small owner owns the ship
                     try
                     {
-                        foreach (var blockowner in (entity as Sandbox.ModAPI.IMyCubeGrid).SmallOwners)
-                        {
-                            if (Sowners.Contains(blockowner))
-                                addEnt = false;
-
-                        }
-                        //checks to see if a large owner owns the ship
-                        if (addEnt)
+                        foreach (var player in (entity as Sandbox.ModAPI.IMyCubeGrid).SmallOwners)
                         {
 
-                            foreach (var blockowner in (entity as Sandbox.ModAPI.IMyCubeGrid).BigOwners)
+
+                            foreach (var fac in Bfaction)
                             {
-                                if (Bowners.Contains(blockowner))
-                                    addEnt = false;
-
+                                addEnt = fac.IsMember(player);
                             }
                         }
-
                     }
                     catch { }
                     //add the acceptable entity to the list that will be returned
@@ -155,17 +151,17 @@ namespace ForceField
                 double range = Math.Sqrt(Math.Pow(ffpAbsPos.X - shipAbsPos.X ,2) + Math.Pow(ffpAbsPos.Y - shipAbsPos.Y ,2) + Math.Pow(ffpAbsPos.Z -shipAbsPos.Z ,2));
                 
                 
-                double percent = Math.Abs(((range-activationRange)/ (detectionRange- activationRange)) - 1) ;
+                double percent = Math.Abs(((range)/ (detectionRange)) - 1) ;
                 
-                //MyAPIGateway.Utilities.ShowNotification(percent.ToString());
-                VRageMath.Vector3 impulseDirect = (ship.Physics.Mass/1.5) * (shipAbsPos - ffpAbsPos) * percent * FFpowerMult ;
+                MyAPIGateway.Utilities.ShowNotification(percent.ToString());
+                VRageMath.Vector3 impulseDirect = (ship.Physics.Mass/3) * (shipAbsPos - ffpAbsPos) * percent * FFpowerMult ;
                 ship.Physics.ApplyImpulse(impulseDirect, ship.Physics.CenterOfMassWorld);
                 FFP.GetTopMostParent().Physics.ApplyImpulse(-impulseDirect, FFP.GetTopMostParent().Physics.CenterOfMassWorld);
             }
             catch { }
 
-                       
-            
+
+      
             
         }
 
