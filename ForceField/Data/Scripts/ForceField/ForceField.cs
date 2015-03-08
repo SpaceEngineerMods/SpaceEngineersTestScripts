@@ -28,11 +28,14 @@ namespace ForceField
 
         MyObjectBuilder_EntityBase _ObjectBuilder;
         IMyBeacon FFP;
-        float activationRange = 30;
-        int detectionRange = 50;
+        double activationRange = 80;
+        double detectionRange = 180;
         bool isFFP = false;
         List<long> Sowners = new List<long>();
         List<long> Bowners = new List<long>();
+
+        double FFpowerMult = .7;
+        double FFpower = 100;
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
             _ObjectBuilder = objectBuilder;
@@ -61,16 +64,17 @@ namespace ForceField
                 }
                 catch
                 { }
-     
-            
+
+                detectionRange =(activationRange * 2.5);
                 
             }
         }
 
 
 
-        public override void UpdateAfterSimulation10()
+        public override void UpdateBeforeSimulation10()
         {
+           
             //cycles through acceptable entitiyes
             if (isFFP)
             {
@@ -90,8 +94,8 @@ namespace ForceField
             HashSet<IMyEntity> hash = new HashSet<IMyEntity>();
 
             //Looks for enitis that are cube grids and that do not have the same entity id as the parent of the Forcefield projector
-            MyAPIGateway.Entities.GetEntities(hash, (x) => (x.GetTopMostParent().EntityId != FFP.GetTopMostParent().EntityId) && x is Sandbox.ModAPI.IMyCubeGrid || x is IMyMeteor  );
-            
+            MyAPIGateway.Entities.GetEntities(hash, (x) => x is IMyEntity  );
+            //x.GetTopMostParent().EntityId != FFP.GetTopMostParent().EntityId) && x is Sandbox.ModAPI.IMyCubeGrid || x is IMyMeteor || 
 
             
             foreach( var entity in hash )
@@ -138,18 +142,27 @@ namespace ForceField
 
         private void CreateFFforEntity(IMyEntity ship)
         {
-
-            //Direction of the ship relative to the FForcefield projector will be used for later 
+            //Position of the ship relative to the FForcefield projector will be used for later 
             VRageMath.Vector3D ShipPos = ship.WorldAABB.Center - FFP.GetTopMostParent().WorldAABB.Center;
 
-            //Direction of the projector relative to the ship will be used later
+            //Position of the projector relative to the ship will be used later
             VRageMath.Vector3D BeaconPos = FFP.GetTopMostParent().WorldAABB.Center - ship.WorldAABB.Center;
-           
-            
 
-     
-            VRageMath.Vector3 impulseDirect= -2000*(BeaconPos-ShipPos);
-            ship.Physics.ApplyImpulse(impulseDirect,ship.Physics.CenterOfMassWorld);
+            try
+            {
+                VRageMath.Vector3D shipAbsPos = ship.WorldAABB.Center;
+                VRageMath.Vector3D ffpAbsPos = FFP.WorldAABB.Center;
+                double range = Math.Sqrt(Math.Pow(ffpAbsPos.X - shipAbsPos.X ,2) + Math.Pow(ffpAbsPos.Y - shipAbsPos.Y ,2) + Math.Pow(ffpAbsPos.Z -shipAbsPos.Z ,2));
+                
+                
+                double percent = Math.Abs(((range-activationRange)/ (detectionRange- activationRange)) - 1) ;
+                
+                //MyAPIGateway.Utilities.ShowNotification(percent.ToString());
+                VRageMath.Vector3 impulseDirect = (ship.Physics.Mass/1.5) * (shipAbsPos - ffpAbsPos) * percent * FFpowerMult ;
+                ship.Physics.ApplyImpulse(impulseDirect, ship.Physics.CenterOfMassWorld);
+                FFP.GetTopMostParent().Physics.ApplyImpulse(-impulseDirect, FFP.GetTopMostParent().Physics.CenterOfMassWorld);
+            }
+            catch { }
 
                        
             
