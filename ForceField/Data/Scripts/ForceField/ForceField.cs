@@ -7,9 +7,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
-
+using System.Text.RegularExpressions;
 using Sandbox.Common;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
@@ -19,7 +21,9 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
+using VRage.Algorithms;
 using IMyCubeGrid = Sandbox.ModAPI.IMyCubeGrid;
+using IMySlimBlock = Sandbox.ModAPI.IMySlimBlock;
 
 
 namespace ForceField
@@ -28,23 +32,33 @@ namespace ForceField
     class ForceField : MyGameLogicComponent
     {
 
-        MyObjectBuilder_EntityBase _objectBuilder;
-        Sandbox.ModAPI.IMyCubeGrid _ffp;
-        double _activationRange = 80;
-        double _detectionRange;
-        bool _isFfp;
-        HashSet<IMyFaction> _bfaction = new HashSet<IMyFaction>();
-        private List<Sandbox.ModAPI.IMySlimBlock> _ffProjectors;
-        
-        double _fFpowerMult = 0.5;
-        double _fFpower = 100;
+        private MyObjectBuilder_EntityBase _objectBuilder;
+        private Sandbox.ModAPI.IMyCubeGrid _ffp;
+        private double _activationRange;
+        private bool _isFfp;
 
+        private List<Sandbox.ModAPI.IMySlimBlock> _ffProjectors;
+        private List<Sandbox.ModAPI.IMySlimBlock> _ffPowerBlocks;
+        private List<Sandbox.ModAPI.IMySlimBlock> _ffAmplifierBlocks;
+        private List<Sandbox.ModAPI.IMySlimBlock> _ffReactorBlocks; 
+        private double _fFpowerMult = 0.5;
+        private double _fFpower;
+        private double _fFMaxpower;
+        private double _ffRegenRate;
+
+        private int _timer;
+        private bool _disabled;
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
             _objectBuilder = objectBuilder;
             Entity.NeedsUpdate |=MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME  | MyEntityUpdateEnum.EACH_100TH_FRAME;
             
             _ffp = Entity as Sandbox.ModAPI.IMyCubeGrid;
+
+            _ffPowerBlocks = new List<IMySlimBlock>();
+            _ffAmplifierBlocks = new List<IMySlimBlock>();
+            _ffProjectors = new List<IMySlimBlock>();
+            _ffReactorBlocks = new List<IMySlimBlock>();
         }
 
         public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false)
@@ -55,46 +69,106 @@ namespace ForceField
 
         public override void UpdateAfterSimulation100()
         {
-            _ffProjectors = CheckFfp();
+            _ffPowerBlocks.Clear();
+            _ffAmplifierBlocks.Clear();
+            _ffProjectors.Clear();
+            _ffReactorBlocks.Clear();
+
+            CheckFfblocks();
+
             _isFfp = _ffProjectors.Any();
 
-           
-
             if (!_isFfp) return;
-            //tries to find both "big and small owners will throw exeption if it does not have owners
-            MyAPIGateway.Utilities.ShowMessage("ConsoleGod", _ffProjectors.Count.ToString());
-            try
+           //sets power 
+            
+            _ffRegenRate = 0;
+            foreach (var reactor in _ffReactorBlocks)
             {
-                List<long> sowners = (_ffp.GetTopMostParent() as Sandbox.ModAPI.IMyCubeGrid).SmallOwners;
-                IMyFactionCollection factions = MyAPIGateway.Session.Factions;
-                foreach(var play in sowners)
+                string reactorInfo = (reactor.FatBlock as IMyReactor).DetailedInfo;
+
+                string num = new string(reactorInfo.ToCharArray().Where(c => Char.IsDigit(c) || c.Equals('.') || c ==' ').ToArray()).Trim();
+
+                num = num.Remove(num.IndexOf(' '));
+                _ffRegenRate += Convert.ToDouble(num);
+                //MyAPIGateway.Utilities.ShowNotification(_ffRegenRate.ToString());
+
+            }
+
+            _fFMaxpower = _ffPowerBlocks.Count * 1000;
+            if (_fFpower < _fFMaxpower)
+            {
+                _fFpower += _ffRegenRate;
+            }
+            else
+            {
+                _fFpower = _fFMaxpower;
+            }
+
+            //sets amplification of power
+            
+            foreach (var amplifier in _ffAmplifierBlocks)
+            {
+                if(amplifier.FatBlock.DisplayNameText.ToLower().Contains("main"))
                 {
-                    _bfaction.Add(factions.TryGetPlayerFaction(play));
+                    try
+                    {
+                        _fFpowerMult = ((amplifier.FatBlock as IMyRadioAntenna).Radius/100)*_ffAmplifierBlocks.Count();
+
+                    }
+                    catch
+                    {
+                        //ignored
+                    }
                 }
+                else
+                {
+                    _fFpowerMult = 0.5;
+                }
+
             }
 
-            catch
+            foreach (var projector in _ffProjectors)
             {
-                // ignored
+                _activationRange = (projector.FatBlock as IMyRadioAntenna).Radius;
             }
 
-            _detectionRange =(_activationRange * 3);
+
+           
+           //MyAPIGateway.Utilities.ShowNotification(_timer.ToString());
+
+            if (_disabled)
+                reportPower();
         }
 
 
 
         public override void UpdateBeforeSimulation10()
         {
-            
-            
-            //cycles through acceptable entitiyes
-            if (!_isFfp) return;
+            if(!_isFfp)return;
+            _timer++;
 
+
+            if (_timer > 5 && !_disabled)
+            {
+                reportPower();
+                _timer = 0;
+            }
+            else if (_timer > 50 && _disabled)
+            {
+                reportPower();
+                _timer = 0;
+                _disabled = false;
+            }
+            //cycles through acceptable entitiyes
+            if ( _fFpower <= 0 || _disabled) return;
+            
+            
             List<IMyEntity> ships = AcceptableEntites();
             foreach (var ship in ships)
             {
                 CreateFFforEntity(ship);
             }
+            
         }
 
         private List<IMyEntity> AcceptableEntites()
@@ -111,8 +185,7 @@ namespace ForceField
             foreach( var entity in hash )
             {
                 //Checks to see if the position of the entity is smaller than the detection range but larger than the activation range
-                if (!((entity.GetPosition() - _ffp.GetPosition()).Length() < _detectionRange) ||
-                    !((entity.GetPosition() - _ffp.GetPosition()).Length() > _activationRange - 3)) continue;
+                if ((entity.GetPosition() - _ffp.GetPosition()).Length() > _activationRange) continue;
                 //bool to see if we should add the entity
                 bool addEnt = true;
                 //checks to see if a small owner owns the ship
@@ -122,11 +195,10 @@ namespace ForceField
                     if (myCubeGrid != null)
                         foreach (var player in myCubeGrid.SmallOwners)
                         {
-
-
-                            foreach (var fac in _bfaction)
+                            foreach (var force in _ffProjectors)
                             {
-                                addEnt = fac.IsMember(player);
+
+                                addEnt = !(force.FatBlock as Sandbox.ModAPI.Ingame.IMyTerminalBlock).HasPlayerAccess(player);
                             }
                         }
                 }
@@ -150,38 +222,94 @@ namespace ForceField
             {
                 VRageMath.Vector3D shipAbsPos = ship.WorldAABB.Center;
                 VRageMath.Vector3D ffpAbsPos = _ffp.WorldAABB.Center;
-                double range = Math.Sqrt(Math.Pow(ffpAbsPos.X - shipAbsPos.X ,2) + Math.Pow(ffpAbsPos.Y - shipAbsPos.Y ,2) + Math.Pow(ffpAbsPos.Z -shipAbsPos.Z ,2));
+                
+                double range = (shipAbsPos-ffpAbsPos).Length();
                 
                 
-                double percent = Math.Abs(((range)/ (_detectionRange)) - 1) ;
+                double percent = Math.Abs(((range)/ (_activationRange)) - 1) ;
                 
-                //MyAPIGateway.Utilities.ShowNotification(percent.ToString());
+                //MyAPIGateway.Utilities.ShowNotification(ship.Physics.Mass.ToString());
+                //creates the actual force field by appling the force
+                _fFpower -= percent * (ship.Physics.Mass / 100) * _fFpowerMult;
+                
 
-                VRageMath.Vector3 impulseDirect = (ship.Physics.Mass/3) * (shipAbsPos - ffpAbsPos) * percent * _fFpowerMult ;
-                ship.Physics.ApplyImpulse(impulseDirect, ship.Physics.CenterOfMassWorld);
-                _ffp.GetTopMostParent().Physics.ApplyImpulse(-impulseDirect, _ffp.GetTopMostParent().Physics.CenterOfMassWorld);
+                if (_fFpower > 0)
+                {
+                    VRageMath.Vector3 impulseDirect = (ship.Physics.Mass/3)*(shipAbsPos - ffpAbsPos)*percent*
+                                                      _fFpowerMult;
+                    ship.Physics.ApplyImpulse(impulseDirect, ship.Physics.CenterOfMassWorld);
+                    _ffp.GetTopMostParent()
+                        .Physics.ApplyImpulse(-impulseDirect, _ffp.GetTopMostParent().Physics.CenterOfMassWorld);
+                }
+                else
+                {
+                    _disabled = true;
+                    
+                }
+                
             }
             catch
             {
                 // ignored
             }
+
+            
         }
 
-        private List<Sandbox.ModAPI.IMySlimBlock> CheckFfp()
+        private void CheckFfblocks()
         {
 
-            List<Sandbox.ModAPI.IMySlimBlock> blockhash = new List<Sandbox.ModAPI.IMySlimBlock>();
+           
 
             try
             {
-                _ffp.GetBlocks(blockhash, b => b.FatBlock is IMyRadioAntenna && b.FatBlock.DisplayNameText.ToLower().Contains("force"));
+                _ffp.GetBlocks(_ffProjectors, b => b.FatBlock is IMyRadioAntenna && b.FatBlock.DisplayNameText.ToLower().Contains("force")  && b.FatBlock.IsWorking);
+                
+                _ffp.GetBlocks(_ffPowerBlocks, b => b.FatBlock is IMyBatteryBlock && b.FatBlock.DisplayNameText.ToLower().Contains("power")&& b.FatBlock.IsWorking);
+
+                _ffp.GetBlocks(_ffAmplifierBlocks, b => b.FatBlock is IMyRadioAntenna && b.FatBlock.DisplayNameText.ToLower().Contains("amp") && b.FatBlock.IsWorking);
+                //MyAPIGateway.Utilities.ShowMessage("consolegod","test");
+                _ffp.GetBlocks(_ffReactorBlocks, b => b.FatBlock is IMyReactor && b.FatBlock.DisplayNameText.ToLower().Contains("power") && b.FatBlock.IsWorking);
             }
             catch
             {
                 //ignored
             }
-            return blockhash;
+            
         }
 
+        public void reportPower()
+        {
+            double percentPower = _fFpower/_fFMaxpower;
+            if (VRageMath.ContainmentType.Contains != _ffp.WorldAABB.Contains(MyAPIGateway.Session.Player.GetPosition()))
+                return;
+
+            
+            if(!(new List<IMySlimBlock>(_ffProjectors.Where(
+                x => (x.FatBlock as IMyRadioAntenna).HasPlayerAccess(MyAPIGateway.Session.Player.PlayerID))).Any()))
+                return;
+
+            //MyAPIGateway.Utilities.ShowMessage("console GOd " , percentPower.ToString());
+
+            if (_disabled)
+            {
+                MyAPIGateway.Utilities.ShowNotification("Shields Broken!!", 2000, MyFontEnum.Red);
+            }
+            else if (percentPower < .25)
+            {
+                MyAPIGateway.Utilities.ShowNotification("Shield Power Below 25%", 2000, MyFontEnum.Red);
+            }
+            else if (percentPower < .50)
+            {
+                MyAPIGateway.Utilities.ShowNotification("Shield Power Below 50%");
+            }
+            else if (percentPower < .75)
+            {
+               MyAPIGateway.Utilities.ShowNotification("Shield Power Below 75%",2000,MyFontEnum.Green);
+            }
+           
+            
+      
+        }
     }
 }
