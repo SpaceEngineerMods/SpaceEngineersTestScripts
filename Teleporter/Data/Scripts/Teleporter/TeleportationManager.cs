@@ -13,7 +13,7 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
-
+using IMyDoor = Sandbox.ModAPI.IMyDoor;
 //basic imports
 
 namespace Teleporter

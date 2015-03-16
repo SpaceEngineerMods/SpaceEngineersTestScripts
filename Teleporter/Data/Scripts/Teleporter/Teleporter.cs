@@ -12,6 +12,8 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
+using IMyDoor = Sandbox.ModAPI.IMyDoor;
+using IMyTerminalBlock = Sandbox.ModAPI.IMyTerminalBlock;
 
 //Basic imports
 
@@ -25,9 +27,9 @@ namespace Teleporter//teleporter namespace
     {
         TeleportationManager man = new TeleportationManager();//creates new teleporter manager, to manage portals
 
-        IMyDoor entrance_g = null;//public, portal entrance
+        Sandbox.ModAPI.IMyDoor entrance_g = null;//public, portal entrance
 
-        public IMyDoor exit_g = null;//public, which is the exit
+        public Sandbox.ModAPI.IMyDoor exit_g = null;//public, which is the exit
 
         bool isportal = false;//bool used in determining whether it was a portal
 
@@ -44,7 +46,7 @@ namespace Teleporter//teleporter namespace
         }
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)//initializes object, overwrites original object code making it an entrance
         {
-            entrance_g = this.Entity as IMyDoor;//says this entity is an IMyDoor Called entrance_g
+            entrance_g = this.Entity as Sandbox.ModAPI.IMyDoor;//says this entity is an IMyDoor Called entrance_g
 
             entrance_g.NeedsUpdate |= MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;//Door state updated every 10th/ 100th frame
 
@@ -131,7 +133,7 @@ namespace Teleporter//teleporter namespace
 
                     player = MyAPIGateway.Session.Player.Controller.ControlledEntity;//player is a controlled entity
 
-                float distance = (player.Entity.GetPosition() - entrance_g.GetPosition()).Length();//distance is a three part vector, is equal to the distance from the player to the portal node
+                double distance = (player.Entity.GetPosition() - entrance_g.GetPosition()).Length();//distance is a three part vector, is equal to the distance from the player to the portal node
                 //MyAPIGateway.Utilities.ShowNotification("Distance = " + distance);
                 //MyAPIGateway.Utilities.ShowNotification((exit_g == null).ToString());
                 if (distance < 1.8f &&  isactive && exit_g != null)//if the distance is less than 1.8f(whatever that is) and both the entrance and exit exist and are operational
@@ -263,13 +265,13 @@ namespace Teleporter//teleporter namespace
         
 
         //Will rewrite bellow to handle antenna connections
-        private IMyDoor GetNearestGateOnDifferentGrid(IMyDoor sourceGate)//this is the check for determining nearest active gate in list
+        private Sandbox.ModAPI.IMyDoor GetNearestGateOnDifferentGrid(Sandbox.ModAPI.IMyDoor sourceGate)//this is the check for determining nearest active gate in list
         {
             List<Sandbox.ModAPI.IMySlimBlock> gateList = GetGateList();//gateList is gateList from above
 
             double distance = 0.0d;//distance variable, also makes first gate checked in the for each below relative 0
 
-            IMyDoor nearest = null;//set nearest variable of IMyDoor to null
+            Sandbox.ModAPI.IMyDoor nearest = null;//set nearest variable of IMyDoor to null
             
             foreach (var gate in gateList)//for each gate in gateList(every active door)
             {
