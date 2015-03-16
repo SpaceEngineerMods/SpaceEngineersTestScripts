@@ -1,11 +1,4 @@
-﻿//Todo:
-//Calculate size of forcefield
-//Stop missiles
-//create custom Models
-//create a force field percentage
-
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
@@ -44,16 +37,16 @@ namespace ForceField
         private List<Sandbox.ModAPI.IMySlimBlock> _ffPowerBlocks;
         private List<Sandbox.ModAPI.IMySlimBlock> _ffAmplifierBlocks;
         private List<Sandbox.ModAPI.IMySlimBlock> _ffReactorBlocks;
-        private List<Sandbox.ModAPI.IMySlimBlock> _ffProviders; 
-        private double _fFpowerMult;
+        private List<Sandbox.ModAPI.IMySlimBlock> _ffProviders;
+        private double _fFpowerMult = 0.5;
 
         private int _timer;
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         {
             _objectBuilder = objectBuilder;
-            Entity.NeedsUpdate |=MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME  | MyEntityUpdateEnum.EACH_100TH_FRAME;
-            
+            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
+
             _ffp = Entity as Sandbox.ModAPI.IMyCubeGrid;
 
             _ffPowerBlocks = new List<IMySlimBlock>();
@@ -71,34 +64,28 @@ namespace ForceField
 
         public override void UpdateAfterSimulation100()
         {
-            //clear lists
             _ffPowerBlocks.Clear();
             _ffAmplifierBlocks.Clear();
             _ffProjectors.Clear();
             _ffReactorBlocks.Clear();
 
-            //Finds The blocks need to create the forcefield
             CheckFfblocks();
 
-            //Checks to see if there are any forcefield projectors
             _isFfp = _ffProjectors.Any();
 
-            //if there are no porjectors then simply stop 
             if (!_isFfp) return;
-           //sets power 
-            
+            //sets power 
+
 
             //sets amplification of power
-            //goes through all of the amplifiers
+
             foreach (var amplifier in _ffAmplifierBlocks)
             {
-                //checks to see if the name contains main
-                if(amplifier.FatBlock.DisplayNameText.ToLower().Contains("main"))
+                if (amplifier.FatBlock.DisplayNameText.ToLower().Contains("main"))
                 {
                     try
                     {
-                        //sets the multiplier to the antenna radius
-                        _fFpowerMult = ((amplifier.FatBlock as IMyRadioAntenna).Radius/100)*_ffAmplifierBlocks.Count();
+                        _fFpowerMult = ((amplifier.FatBlock as IMyRadioAntenna).Radius / 100) * _ffAmplifierBlocks.Count();
 
                     }
                     catch
@@ -108,22 +95,20 @@ namespace ForceField
                 }
                 else
                 {
-                    //if there are no amplifiers with the name main set the multiplier to .5
                     _fFpowerMult = 0.5;
                 }
 
             }
 
-            // goes through the projectors and sets the range of the FF to that of the antenna.
             foreach (var projector in _ffProjectors)
             {
                 _activationRange = (projector.FatBlock as IMyRadioAntenna).Radius;
             }
 
 
-           
-           //MyAPIGateway.Utilities.ShowNotification(_timer.ToString());
- 
+
+            //MyAPIGateway.Utilities.ShowNotification(_timer.ToString());
+
 
         }
 
@@ -131,7 +116,7 @@ namespace ForceField
 
         public override void UpdateBeforeSimulation10()
         {
-            if(!_isFfp)return;
+            if (!_isFfp) return;
             _timer++;
 
 
@@ -147,7 +132,7 @@ namespace ForceField
             {
                 CreateFFforEntity(ship);
             }
-            
+
         }
 
         private List<IMyEntity> AcceptableEntites()
@@ -157,11 +142,11 @@ namespace ForceField
             HashSet<IMyEntity> hash = new HashSet<IMyEntity>();
 
             //Looks for enitis that are cube grids and that do not have the same entity id as the parent of the Forcefield projector
-            MyAPIGateway.Entities.GetEntities(hash, x => x != null  );
+            MyAPIGateway.Entities.GetEntities(hash, x => x != null);
             //x.GetTopMostParent().EntityId != FFP.GetTopMostParent().EntityId) && x is Sandbox.ModAPI.IMyCubeGrid || x is IMyMeteor || 
 
-            
-            foreach( var entity in hash )
+
+            foreach (var entity in hash)
             {
                 //Checks to see if the position of the entity is smaller than the detection range but larger than the activation range
                 if ((entity.GetPosition() - _ffp.GetPosition()).Length() > _activationRange) continue;
@@ -186,10 +171,10 @@ namespace ForceField
                     // ignored
                 }
                 //add the acceptable entity to the list that will be returned
-                if(addEnt)
+                if (addEnt)
                     acceptable.Add(entity);
             }
-            
+
             return acceptable;
 
         }
@@ -201,41 +186,41 @@ namespace ForceField
             {
                 VRageMath.Vector3D shipAbsPos = ship.WorldAABB.Center;
                 VRageMath.Vector3D ffpAbsPos = _ffp.WorldAABB.Center;
-                
-                double range = (shipAbsPos-ffpAbsPos).Length();
-                
-                
-                double percent = Math.Abs(((range)/ (_activationRange)) - 1) ;
-                
+
+                double range = (shipAbsPos - ffpAbsPos).Length();
+
+
+                double percent = Math.Abs(((range) / (_activationRange)) - 1);
+
                 //MyAPIGateway.Utilities.ShowNotification(ship.Physics.Mass.ToString());
                 //creates the actual force field by appling the force
-                double amount = (percent*_fFpowerMult*(ship.Physics.Mass/100))/1000;
+                double amount = (percent * _fFpowerMult * (ship.Physics.Mass / 100)) / 1000;
                 //MyAPIGateway.Utilities.ShowMessage("Console God ",((MyFixedPoint)amount).ToString());
 
-                if (reducePower(amount))
+                if (ReducePower(amount))
                 {
-                    VRageMath.Vector3 impulseDirect = (ship.Physics.Mass/3)*(shipAbsPos - ffpAbsPos)*percent*_fFpowerMult;
+                    VRageMath.Vector3 impulseDirect = (ship.Physics.Mass / 3) * (shipAbsPos - ffpAbsPos) * percent * _fFpowerMult;
                     ship.Physics.ApplyImpulse(impulseDirect, ship.Physics.CenterOfMassWorld);
                     _ffp.GetTopMostParent().Physics.ApplyImpulse(-impulseDirect, _ffp.GetTopMostParent().Physics.CenterOfMassWorld);
                 }
-                
+
             }
             catch
             {
                 // ignored
             }
 
-            
+
         }
 
         private void CheckFfblocks()
         {
 
-           
+
 
             try
             {
-                _ffp.GetBlocks(_ffProjectors, b => b.FatBlock is IMyRadioAntenna && b.FatBlock.DisplayNameText.ToLower().Contains("force")  && b.FatBlock.IsWorking);
+                _ffp.GetBlocks(_ffProjectors, b => b.FatBlock is IMyRadioAntenna && b.FatBlock.DisplayNameText.ToLower().Contains("force") && b.FatBlock.IsWorking);
 
                 _ffp.GetBlocks(_ffAmplifierBlocks, b => b.FatBlock is IMyRadioAntenna && b.FatBlock.DisplayNameText.ToLower().Contains("amp") && b.FatBlock.IsWorking);
                 //MyAPIGateway.Utilities.ShowMessage("consolegod","test");
@@ -245,7 +230,7 @@ namespace ForceField
             {
                 //ignored
             }
-            
+
         }
 
         public void ReportPower()
@@ -254,8 +239,8 @@ namespace ForceField
             if (VRageMath.ContainmentType.Contains != _ffp.WorldAABB.Contains(MyAPIGateway.Session.Player.GetPosition()))
                 return;
 
-            
-            if(!(new List<IMySlimBlock>(_ffProjectors.Where(
+
+            if (!(new List<IMySlimBlock>(_ffProjectors.Where(
                 x => (x.FatBlock as IMyRadioAntenna).HasPlayerAccess(MyAPIGateway.Session.Player.PlayerID))).Any()))
                 return;
 
@@ -267,13 +252,13 @@ namespace ForceField
                 Sandbox.ModAPI.IMyInventory inv = (Sandbox.ModAPI.IMyInventory)(provider.FatBlock as Sandbox.ModAPI.Interfaces.IMyInventoryOwner).GetInventory(0);
 
 
-                foreach (var test in inv.GetItems())
+                foreach (var inventoryItem in inv.GetItems())
                 {
 
-                    if (test.Content.SubtypeName != "Construction")
+                    if (inventoryItem.Content.SubtypeName != "Construction")
                     {
 
-                        KGD += ((double)test.Amount)*_fFpowerMult;
+                        KGD += ((double)inventoryItem.Amount) * _fFpowerMult;
 
                     }
                 }
@@ -284,47 +269,47 @@ namespace ForceField
             if (KGD == 0)
             {
                 MyAPIGateway.Utilities.ShowNotification("Shields Down", 2000, MyFontEnum.Red);
-            } 
+            }
 
 
 
         }
 
-        private bool reducePower(double amount)
+        private bool ReducePower(double amount)
         {
-            bool succesful = false;
             
+
             foreach (var provider in _ffProviders)
             {
 
                 Sandbox.ModAPI.IMyInventory inv = (Sandbox.ModAPI.IMyInventory)(provider.FatBlock as Sandbox.ModAPI.Interfaces.IMyInventoryOwner).GetInventory(0);
-   
 
-                foreach (var test in inv.GetItems())
+
+                foreach (var inventoryItem in inv.GetItems())
                 {
 
-                    if (test.Content.SubtypeName != "Construction")
+                    if (inventoryItem.Content.SubtypeName != "Construction")
                     {
                         if ((MyFixedPoint)amount == 0)
                         {
                             return true;
                         }
-                        if (test.Amount >= (MyFixedPoint)amount)
+                        if (inventoryItem.Amount >= (MyFixedPoint)amount)
                         {
-                            
-                         
-                            inv.RemoveItems(test.ItemId, (MyFixedPoint)amount);
-                            
+
+
+                            inv.RemoveItems(inventoryItem.ItemId, (MyFixedPoint)amount);
+
                             return true;
                         }
-                        
-                        amount -= (Double) test.Amount;
+
+                        amount -= (Double)inventoryItem.Amount;
                         /*
                         MyAPIGateway.Utilities.ShowMessage("Console God",
                                test.Amount + " " + (MyFixedPoint)amount + " " +
                                (test.Amount - (MyFixedPoint)amount)); 
                          */
-                        inv.RemoveItems(test.ItemId,test.Amount);
+                        inv.RemoveItems(inventoryItem.ItemId, inventoryItem.Amount);
                     }
                 }
             }
