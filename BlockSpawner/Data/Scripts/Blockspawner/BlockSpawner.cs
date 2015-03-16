@@ -21,7 +21,7 @@ namespace TestScript
     {
         
 
-        IMySensorBlock Sensor;
+        Sandbox.ModAPI.IMySensorBlock Sensor;
 
         public override void Close()
         {
