@@ -9,7 +9,7 @@ using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 using VRageMath;
-
+using IMyDoor = Sandbox.ModAPI.IMyDoor;
 namespace AutoDoor
 {
 	//[MySessionComponentDescriptor(MyUpdateOrder.NoUpdate)]
