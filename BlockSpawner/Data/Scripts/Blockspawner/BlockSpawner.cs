@@ -13,7 +13,7 @@ using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
-
+using IMySensorBlock = Sandbox.ModAPI.IMySensorBlock;
 namespace TestScript
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_SensorBlock))]
