@@ -38,7 +38,7 @@ namespace Teleporter//teleporter namespace
         bool WasUsed = false;//bool determining whether a portal was just used
 
         private int m_timer = 0;//timer
-
+        
         
         public override void Close()//Door state Changed
         {

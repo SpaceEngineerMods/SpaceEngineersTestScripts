@@ -71,27 +71,33 @@ namespace ForceField
 
         public override void UpdateAfterSimulation100()
         {
+            //clear lists
             _ffPowerBlocks.Clear();
             _ffAmplifierBlocks.Clear();
             _ffProjectors.Clear();
             _ffReactorBlocks.Clear();
 
+            //Finds The blocks need to create the forcefield
             CheckFfblocks();
 
+            //Checks to see if there are any forcefield projectors
             _isFfp = _ffProjectors.Any();
 
+            //if there are no porjectors then simply stop 
             if (!_isFfp) return;
            //sets power 
             
 
             //sets amplification of power
-            
+            //goes through all of the amplifiers
             foreach (var amplifier in _ffAmplifierBlocks)
             {
+                //checks to see if the name contains main
                 if(amplifier.FatBlock.DisplayNameText.ToLower().Contains("main"))
                 {
                     try
                     {
+                        //sets the multiplier to the antenna radius
                         _fFpowerMult = ((amplifier.FatBlock as IMyRadioAntenna).Radius/100)*_ffAmplifierBlocks.Count();
 
                     }
@@ -102,11 +108,13 @@ namespace ForceField
                 }
                 else
                 {
+                    //if there are no amplifiers with the name main set the multiplier to .5
                     _fFpowerMult = 0.5;
                 }
 
             }
 
+            // goes through the projectors and sets the range of the FF to that of the antenna.
             foreach (var projector in _ffProjectors)
             {
                 _activationRange = (projector.FatBlock as IMyRadioAntenna).Radius;
