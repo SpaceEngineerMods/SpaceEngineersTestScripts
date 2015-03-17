@@ -59,6 +59,8 @@ namespace ForceField
         public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false)
         {
             return _objectBuilder;
+            
+            
         }
 
 
@@ -132,7 +134,7 @@ namespace ForceField
             {
                 CreateFFforEntity(ship);
             }
-
+            
         }
 
         private List<IMyEntity> AcceptableEntites()
@@ -244,7 +246,7 @@ namespace ForceField
                 x => (x.FatBlock as IMyRadioAntenna).HasPlayerAccess(MyAPIGateway.Session.Player.PlayerID))).Any()))
                 return;
 
-
+            
 
             foreach (var provider in _ffProviders)
             {
@@ -278,7 +280,6 @@ namespace ForceField
         private bool ReducePower(double amount)
         {
             
-
             foreach (var provider in _ffProviders)
             {
 
