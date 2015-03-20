@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Communications", "Communications\Communications.csproj", "{932D2D69-79E6-4D12-98CA-9A1B5322B1BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Communications", "Communications.csproj", "{932D2D69-79E6-4D12-98CA-9A1B5322B1BE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

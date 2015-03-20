@@ -64,9 +64,10 @@ namespace Communications //teleporter namespace
                 var shipAngle = commPanel.GetTopMostParent().WorldMatrix.GetOrientation();
                 var shipRotation = commPanel.GetTopMostParent().Physics.AngularVelocity.ToString();
                 var shipRotationAcceleration = commPanel.GetTopMostParent().Physics.AngularAcceleration.ToString();
-                
-                    fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle" +shipAngle.Forward + " \n" +
-                        shipAngle.Right + "\n " + shipAngle.Up + "\n Ship Rot Accel " + shipRotationAcceleration;
+                var eulerAngle = new Vector3D(Math.Atan2(shipAngle.M32, shipAngle.M33),
+                        Math.Atan2(-shipAngle.M31, Math.Sqrt( Math.Pow(shipAngle.M32, 2) + Math.Pow(shipAngle.M33, 2))),
+                    Math.Atan2(shipAngle.M21, shipAngle.M11));
+                    fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle " + eulerAngle + "\n Ship Rot " + shipRotation + "\n Ship Rot Accel " + shipRotationAcceleration;
 
 
                 commPanel.WritePublicText(fullString);
