@@ -28,17 +28,17 @@ namespace Teleporter
         
         public bool Teleportplayer(IMyDoor entrance_p, IMyDoor exit_p, Sandbox.ModAPI.Interfaces.IMyControllableEntity player)//public method that teleports a player given entrance, exit and player
         {
-            //MyAPIGateway.Utilities.ShowNotification("Called Teleporter");
+            //MyAPIcommway.Utilities.ShowNotification("Called Teleporter");
             if (entrance_p == null || exit_p == null)//if entrance or exit is null
                 return false;//teleportation didnt happen
-            //MyAPIGateway.Utilities.ShowNotification("Portal Valid");
+            //MyAPIcommway.Utilities.ShowNotification("Portal Valid");
             if (DisabledPortals.Contains(exit_p.EntityId.ToString()) || DisabledPortals.Contains(entrance_p.EntityId.ToString()))//if the entrance or exit matches with a disabled portal
                 return false;//ditto
 
             else
 
             {
-                //MyAPIGateway.Utilities.ShowNotification("Portals Not inactive");
+                //MyAPIcommway.Utilities.ShowNotification("Portals Not inactive");
                 // Actual Teleportaion Code
 
                 VRageMath.Vector3 pos = exit_p.GetPosition();//creates a 3D vector of the exit
@@ -57,7 +57,7 @@ namespace Teleporter
 
                 //same with entrance headings
 
-                if (player.Entity.EntityId == MyAPIGateway.Session.Player.PlayerID)// checks if entity is the player going through the portal
+                if (player.Entity.EntityId == MyAPIcommway.Session.Player.PlayerID)// checks if entity is the player going through the portal
                 {
                     //get difference of player heading from entrance heading, and add it to exit heading
 
@@ -72,10 +72,10 @@ namespace Teleporter
                 //set player orientation given calculations
                 // TODO set player orientation above, I dont know how to call up the tilt angles
 
-                // Enable gate shutdown timer
+                // Enable comm shutdown timer
 
                 DisabledPortals += " " + exit_p.EntityId + " " + entrance_p.EntityId;// adds strings of exit and entrance to the disabled list
-                MyAPIGateway.Utilities.ShowNotification("Teleporting Player");
+                MyAPIcommway.Utilities.ShowNotification("Teleporting Player");
                 return true;// return true, teleportation actually happened
             }  
         }
@@ -98,9 +98,9 @@ namespace Teleporter
             
 
         }
-        public bool isActive(Sandbox.ModAPI.IMyCubeBlock gate)//checks whether a portal is active or not
+        public bool isActive(Sandbox.ModAPI.IMyCubeBlock comm)//checks whether a portal is active or not
         {
-            if (DisabledPortals.Contains(gate.EntityId.ToString()))//if disabled portals string contains a specific portal id
+            if (DisabledPortals.Contains(comm.EntityId.ToString()))//if disabled portals string contains a specific portal id
                 return false;
 
             else
