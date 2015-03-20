@@ -1,14 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 using Sandbox.Common;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
-using Sandbox.Definitions;
-using Sandbox.Engine;
-using Sandbox.Game;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
@@ -16,71 +9,80 @@ using VRageMath;
 
 //Basic imports
 
-
-
-namespace Communications//teleporter namespace
+namespace Communications //teleporter namespace
 {
-
-    [MyEntityComponentDescriptor(typeof(MyObjectBuilder_TextPanel))]//Type of TextPanel, applies to TextPanels
-
-    public class CommLink : MyGameLogicComponent//class CommLink, calls from game logic, further describes what a CommLink is
+    [MyEntityComponentDescriptor(typeof (MyObjectBuilder_TextPanel))] //Type of TextPanel, applies to TextPanels
+    public class CommLink : MyGameLogicComponent
+        //class CommLink, calls from game logic, further describes what a CommLink is
     {
-        AntennaManager AM = new AntennaManager();
+        public bool _isComm; //Is it a communications panel?
+        private int _mTimer; //timer
+        private MyObjectBuilder_EntityBase _objectBuilder;
+        //private AntennaManager AM = new AntennaManager();
+        private IMyTextPanel commPanel; //for use later
+        public bool Isactive; //bool determining whether a CommLink works or not
 
-        IMyTextPanel commPanel = null;//for use later
-
-        bool isComm = false;//Is it a communications panel?
-
-        bool isactive = true;//bool determining whether a CommLink works or not
-
-        private int m_timer = 0;//timer
-
-        public override void Init(MyObjectBuilder_EntityBase objectBuilder)//initializes object, overwrites original object code making it an communications panel
+        public override void Init(MyObjectBuilder_EntityBase objectBuilder)
+            //initializes object, overwrites original object code making it an communications panel
         {
-            commPanel = this.Entity as IMyTextPanel;//says this entity is an IMyTextPanel Called entrance_g
+            _objectBuilder = objectBuilder;
+            commPanel = Entity as IMyTextPanel; //says this entity is an IMyTextPanel Called entrance_g
 
-            commPanel.NeedsUpdate |= MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;//Door state updated every 10th/ 100th frame
+            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
+                //Door state updated every 10th/ 100th frame
 
+            Isactive = true;
         }
 
-        void CommSateChanged(bool obj)//sets up when and how to detect changes
+        public override void UpdateAfterSimulation100()
         {
-            if (!Entity.NeedsUpdate.HasFlag(MyEntityUpdateEnum.EACH_10TH_FRAME))//if it does not have a flag every ten frames
-            {
-                Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;//sets needs update to 10 or 100 frames
-            }
+           
         }
 
         //This is the actual check for teleportation
         public override void UpdateBeforeSimulation10() //rewriting the Comm update stuff, activating every 10 frames
         {
+            var myname = commPanel.DisplayNameText; //create string myname, name of Comm
+          
+            if (!myname.Contains("Comm")) return;
 
-            string myname = commPanel.CustomName; //create string myname, name of Comm
-
-            if (myname.Contains("Comm"))
+            
+            if (myname.Contains("Main"))
             {
-                if (myname.Contains("Main"))
-                {
-                    //not done
-                }
-                if (myname.Contains("Ship"))
-                {
-                    var shipPosition = commPanel.GetTopMostParent().GetPosition().ToString();
-                    var shipVelocity = commPanel.GetTopMostParent().Physics.LinearVelocity.ToString();
-                    var shipAcceleration = commPanel.GetTopMostParent().Physics.LinearAcceleration.ToString();
-                    var shipAngle = commPanel.GetTopMostParent().WorldMatrix.GetOrientation();
-                    var shipRotation = commPanel.GetTopMostParent().Physics.AngularVelocity.ToString();
-                    var shipRotationAcceleration =
-                        commPanel.GetTopMostParent().Physics.AngularAcceleration.ToString();
-                    string FullString = shipPosition + "\n" + shipVelocity + "\n" + shipAcceleration + "\n" + shipAngle.Forward + " " + shipAngle.Up + "\n" +
-                                        shipRotation + "\n" + shipRotationAcceleration;
-                    (commPanel as IMyTextPanel).WritePublicText(FullString, false);
-                }
-                if (myname.Contains("Port"))
-                {
-                    //not done
-                }
+                //not done
             }
+            if (myname.Contains("Ship"))
+            {
+                
+                var fullString = "";
+                
+                commPanel.WritePublicText(fullString);
+                commPanel.GetTopMostParent().Physics.UpdateAccelerations();
+                var shipPosition = commPanel.GetTopMostParent().GetPosition().ToString();
+                var shipVelocity = commPanel.GetTopMostParent().Physics.LinearVelocity.ToString();
+                var shipAcceleration = commPanel.GetTopMostParent().Physics.LinearAcceleration.ToString();
+                var shipAngle = commPanel.GetTopMostParent().WorldMatrix.GetOrientation();
+                var shipRotation = commPanel.GetTopMostParent().Physics.AngularVelocity.ToString();
+                var shipRotationAcceleration = commPanel.GetTopMostParent().Physics.AngularAcceleration.ToString();
+                
+                    fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle" +shipAngle.Forward + " \n" +
+                        shipAngle.Right + "\n " + shipAngle.Up + "\n Ship Rot Accel " + shipRotationAcceleration;
+
+
+                commPanel.WritePublicText(fullString);
+                commPanel.ShowPublicTextOnScreen();
+                commPanel.SetValueFloat("FontSize", 1.0f);
+               
+            }
+            if (myname.Contains("Port"))
+            {
+                //not done
+            }
+        }
+
+        public override void UpdateAfterSimulation()
+        {
+            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
         }
 
         /*if (isportal && isactive)//if isportal is true
@@ -153,28 +155,9 @@ namespace Communications//teleporter namespace
         */
         //useless stuff, DO NOT DELETE 
 
-
-        public override void UpdateAfterSimulation()//irrelevant
+        public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false) // Does nothing
         {
-
+            return _objectBuilder;
         }
-        public override void UpdateAfterSimulation10()//irelevant
-        {
-
-
-        }
-        public override void UpdateBeforeSimulation()//does nothing
-        {
-
-        }
-        public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false)// Does nothing
-        {
-            return commPanel as MyObjectBuilder_EntityBase;
-        }
-
-
-    }//end of class
-
-
-
-}//end of namespace
+    } //end of class
+} //end of namespace
