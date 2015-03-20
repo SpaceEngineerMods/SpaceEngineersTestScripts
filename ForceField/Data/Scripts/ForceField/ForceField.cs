@@ -163,7 +163,8 @@ namespace ForceField
                         {
                             foreach (var force in _ffProjectors)
                             {
-
+                                
+                                
                                 addEnt = !(force.FatBlock as Sandbox.ModAPI.Ingame.IMyTerminalBlock).HasPlayerAccess(player);
                             }
                         }
