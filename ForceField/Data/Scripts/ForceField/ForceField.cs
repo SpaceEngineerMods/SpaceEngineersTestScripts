@@ -66,6 +66,7 @@ namespace ForceField
 
         public override void UpdateAfterSimulation100()
         {
+            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
             _ffPowerBlocks.Clear();
             _ffAmplifierBlocks.Clear();
             _ffProjectors.Clear();
