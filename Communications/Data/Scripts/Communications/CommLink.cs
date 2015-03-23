@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Reflection.Emit;
 using Sandbox.Common;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
@@ -6,6 +9,7 @@ using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
 using VRageMath;
+using IMySlimBlock = Sandbox.ModAPI.IMySlimBlock;
 
 //Basic imports
 
@@ -78,6 +82,23 @@ namespace Communications //teleporter namespace
             if (myname.Contains("Port"))
             {
                 //not done
+            }
+
+            HashSet<IMyEntity> ships = new HashSet<IMyEntity>();
+            //find all of the ships
+            Sandbox.ModAPI.MyAPIGateway.Entities.GetEntities(ships, (x) => x is Sandbox.ModAPI.IMyCubeGrid) ;
+            int i =0;
+            var turrets = new List<IMyLargeMissileTurret>();
+            // go through ships
+            foreach(var ship in ships)
+            {
+                var templist = new List<Sandbox.ModAPI.IMySlimBlock>();
+                (ship as Sandbox.ModAPI.IMyCubeGrid).GetBlocks(templist,x => x is IMyLargeMissileTurret && x.FatBlock.IsWorking && !x.IsDestroyed);
+
+                foreach (var temp in templist)
+                {
+                    turrets.Add(temp.FatBlock as IMyLargeMissileTurret);
+                }
             }
         }
 

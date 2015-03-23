@@ -42,6 +42,7 @@ namespace Communications
                     }
                     catch
                     {
+                       
                     }
                     try //try this out because if wrong it breaks game
                     {
