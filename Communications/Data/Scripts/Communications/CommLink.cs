@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
+
+using System.Linq;
 using System.Reflection.Emit;
 using Sandbox.Common;
 using Sandbox.Common.Components;
@@ -19,12 +20,11 @@ namespace Communications //teleporter namespace
     public class CommLink : MyGameLogicComponent
         //class CommLink, calls from game logic, further describes what a CommLink is
     {
-        public bool _isComm; //Is it a communications panel?
-        private int _mTimer; //timer
+        private AntennaManager _antennaManager;
         private MyObjectBuilder_EntityBase _objectBuilder;
         //private AntennaManager AM = new AntennaManager();
         private IMyTextPanel commPanel; //for use later
-        public bool Isactive; //bool determining whether a CommLink works or not
+        
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
             //initializes object, overwrites original object code making it an communications panel
@@ -35,32 +35,54 @@ namespace Communications //teleporter namespace
             Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
                 //Door state updated every 10th/ 100th frame
 
-            Isactive = true;
+            _antennaManager = new AntennaManager();
         }
 
-        public override void UpdateAfterSimulation100()
+        public override void UpdateAfterSimulation10()
         {
            
         }
 
         //This is the actual check for teleportation
-        public override void UpdateBeforeSimulation10() //rewriting the Comm update stuff, activating every 10 frames
+        public override void UpdateBeforeSimulation100() //rewriting the Comm update stuff, activating every 10 frames
         {
             var myname = commPanel.DisplayNameText; //create string myname, name of Comm
-          
-            if (!myname.Contains("Comm")) return;
+
+            if (!myname.Contains("Comm"))
+            {
+               return;
+
+            }
 
             
             if (myname.Contains("Main"))
             {
+                commPanel.WritePublicText("");
+                var validConnections = _antennaManager.GetValidConnections();
+                var shipName = "";
+                int number = 0;
+                foreach (var hash in validConnections)
+                {
+                    shipName += "\n Connections #" + number + "\n";
+
+                    shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
+                    number++;
+                }
+              
+                commPanel.WritePublicText(number +"\n" + shipName);
+                commPanel.ShowPublicTextOnScreen();
+                commPanel.SetValueFloat("FontSize", 1.0f);
                 //not done
             }
             if (myname.Contains("Ship"))
             {
                 
+
                 var fullString = "";
                 
                 commPanel.WritePublicText(fullString);
+                
+
                 commPanel.GetTopMostParent().Physics.UpdateAccelerations();
                 var shipPosition = commPanel.GetTopMostParent().GetPosition().ToString();
                 var shipVelocity = commPanel.GetTopMostParent().Physics.LinearVelocity.ToString();
@@ -71,8 +93,8 @@ namespace Communications //teleporter namespace
                 var eulerAngle = new Vector3D(Math.Atan2(shipAngle.M32, shipAngle.M33),
                         Math.Atan2(-shipAngle.M31, Math.Sqrt( Math.Pow(shipAngle.M32, 2) + Math.Pow(shipAngle.M33, 2))),
                     Math.Atan2(shipAngle.M21, shipAngle.M11));
-                    fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle " + eulerAngle + "\n Ship Rot " + shipRotation + "\n Ship Rot Accel " + shipRotationAcceleration;
-
+                    fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle " + eulerAngle + "\n Ship Rot Vel" + shipRotation + "\n Ship Rot Accel " + shipRotationAcceleration;
+                
 
                 commPanel.WritePublicText(fullString);
                 commPanel.ShowPublicTextOnScreen();
@@ -84,22 +106,7 @@ namespace Communications //teleporter namespace
                 //not done
             }
 
-            HashSet<IMyEntity> ships = new HashSet<IMyEntity>();
-            //find all of the ships
-            Sandbox.ModAPI.MyAPIGateway.Entities.GetEntities(ships, (x) => x is Sandbox.ModAPI.IMyCubeGrid) ;
-            int i =0;
-            var turrets = new List<IMyLargeMissileTurret>();
-            // go through ships
-            foreach(var ship in ships)
-            {
-                var templist = new List<Sandbox.ModAPI.IMySlimBlock>();
-                (ship as Sandbox.ModAPI.IMyCubeGrid).GetBlocks(templist,x => x is IMyLargeMissileTurret && x.FatBlock.IsWorking && !x.IsDestroyed);
-
-                foreach (var temp in templist)
-                {
-                    turrets.Add(temp.FatBlock as IMyLargeMissileTurret);
-                }
-            }
+         
         }
 
         public override void UpdateAfterSimulation()
