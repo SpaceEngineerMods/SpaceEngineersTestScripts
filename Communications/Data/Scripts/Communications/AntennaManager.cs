@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
@@ -16,7 +17,7 @@ namespace Communications
     //Controls the cool down of the portals
     public class AntennaManager //creates teleportation manager
     {
-        public List<IMySlimBlock> CommMainList = new List<IMySlimBlock>(); //create new list of blocks
+        private List<IMySlimBlock> _commMainList = new List<IMySlimBlock>(); //create new list of blocks
         private List<IMySlimBlock> _commPortList = new List<IMySlimBlock>(); //create new list of blocks
         private List<IMySlimBlock> _workingAntennas = new List<IMySlimBlock>(); //create new list of blocks
         private List<IMySlimBlock> _workingAntennaTurrets = new List<IMySlimBlock>(); //create new list of blocks
@@ -27,7 +28,7 @@ namespace Communications
                 var hash = new HashSet<IMyEntity>(); //Creates new IMyEntity hash set
 
                 MyAPIGateway.Entities.GetEntities(hash, x => x is IMyCubeGrid); //puts all cube grids in hash
-                CommMainList.Clear();
+                _commMainList.Clear();
                 _commPortList.Clear();
                 _workingAntennaTurrets.Clear();
                 _workingAntennas.Clear();
@@ -49,7 +50,7 @@ namespace Communications
                     try //try this out because if wrong it breaks game
                     {
                         if (grid != null)
-                            grid.GetBlocks(_commPortList,
+                            grid.GetBlocks(_commMainList,
                                 x =>
                                     x.FatBlock is IMyTextPanel &&
                                     (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") &&
@@ -117,6 +118,31 @@ namespace Communications
                 connections.Add(subConnections);
             }
             return connections;
+        }
+
+        public List<IMyTextPanel> GetAvailableCommPortList(Sandbox.ModAPI.IMyCubeGrid referenceGrid)
+        {
+            BlocksUpdate();
+           
+            var antennaConnections = GetValidConnections();
+            var availableAntennasHash = antennaConnections.Where(x => x.First().GetTopMostParent().EntityId == referenceGrid.EntityId);
+            var availableAntennas = new List<IMyEntity>();
+            var antennasfirstOrDefault = availableAntennasHash.FirstOrDefault();
+
+            if (antennasfirstOrDefault != null)
+
+            availableAntennas.AddRange(antennasfirstOrDefault);
+
+            var commList = new List<IMyTextPanel>();
+            var commSlimBlockList = new List<IMySlimBlock>();
+
+            foreach(var antenna in availableAntennas)
+               commSlimBlockList.AddRange(_commPortList.Where(comm1 => comm1.FatBlock.GetTopMostParent().EntityId == antenna.GetTopMostParent().EntityId ));
+
+            commSlimBlockList.ForEach(comm => commList.Add(comm.FatBlock as IMyTextPanel));
+
+            return commList;
+
         }
 
         private static bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not

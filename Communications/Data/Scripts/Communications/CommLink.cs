@@ -22,10 +22,10 @@ namespace Communications //teleporter namespace
     public class CommLink : MyGameLogicComponent
     //class CommLink, calls from game logic, further describes what a CommLink is
     {
-        public List<IMySlimBlock> OreDetectors = new List<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> Asteroids = new List<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> OreDeposits = new List<IMySlimBlock>(); //create new list of blocks
-        public bool IsComm; //Is it a communications panel?
+        private List<IMySlimBlock> OreDetectors = new List<IMySlimBlock>(); //create new list of blocks
+        private List<IMySlimBlock> Asteroids = new List<IMySlimBlock>(); //create new list of blocks
+        private List<IMySlimBlock> OreDeposits = new List<IMySlimBlock>(); //create new list of blocks
+        private bool _isComm; //Is it a communications panel?
         private int _mTimer; //timer
         private MyObjectBuilder_EntityBase _objectBuilder;
        
@@ -47,38 +47,13 @@ namespace Communications //teleporter namespace
 
         public override void UpdateAfterSimulation10()
         {
-
-        }
-
-        //This is the actual check for teleportation
-        public override void UpdateBeforeSimulation100() //rewriting the Comm update stuff, activating every 10 frames
-        {
-            var myname = _commPanel.DisplayNameText; //create string myname, name of Comm
-
-            if (myname.Contains("Main"))
-            {
-                _commPanel.WritePublicText("");
-                var validConnections = _antennaManager.GetValidConnections();
-                var shipName = "";
-                int number = 0;
-                foreach (var hash in validConnections)
-                {
-                    shipName += "\n Connections #" + number + "\n";
-
-                    shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
-                    number++;
-                }
-              
-                _commPanel.WritePublicText(number +"\n" + shipName);
-                _commPanel.ShowPublicTextOnScreen();
-                _commPanel.SetValueFloat("FontSize", 1.0f);
-                //not done
-            }
-            if (myname.Contains("Ship"))
+           
+            if (!_isComm) return;
+            if (_commPanel.DisplayNameText.Contains("Ship"))
             {
 
                 var fullString = "";
-                
+
                 _commPanel.WritePublicText(fullString);
                 _commPanel.WritePublicText(fullString);
                 _commPanel.GetTopMostParent().Physics.UpdateAccelerations();
@@ -120,6 +95,36 @@ namespace Communications //teleporter namespace
                 _commPanel.SetValueFloat("FontSize", 1.0f);
 
             }
+        }
+
+        //This is the actual check for teleportation
+        public override void UpdateBeforeSimulation100() //rewriting the Comm update stuff, activating every 10 frames
+        {
+            var myname = _commPanel.DisplayNameText; //create string myname, name of Comm
+            _isComm = myname.Contains("Comm");
+            if (!_isComm) return;
+            
+           
+            if (myname.Contains("Main"))
+            {
+                _commPanel.WritePublicText("");
+                var validConnections = _antennaManager.GetValidConnections();
+                var shipName = "";
+                int number = 0;
+                foreach (var hash in validConnections)
+                {
+                    shipName += "\n Connections #" + number + "\n";
+
+                    shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
+                    number++;
+                }
+              
+                _commPanel.WritePublicText(number +"\n" + shipName);
+                _commPanel.ShowPublicTextOnScreen();
+                _commPanel.SetValueFloat("FontSize", 1.0f);
+                //not done
+            }
+           
             if (myname.Contains("Port"))
             {
                 //not done
@@ -131,7 +136,7 @@ namespace Communications //teleporter namespace
             }
         }
 
-        public void GetOre()
+        private void GetOre()
         {
             var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
             ship.GetBlocks(OreDetectors, x =>
@@ -139,10 +144,10 @@ namespace Communications //teleporter namespace
                 var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
                 return myTerminalBlock != null && (x.FatBlock is IMyOreDetector && this.IsActive(x.FatBlock));
             });
-
+            
         }
 
-        public bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
+        private bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
         {
             return comm.IsWorking || comm.IsFunctional;
         }
