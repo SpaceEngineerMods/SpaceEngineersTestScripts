@@ -28,7 +28,7 @@ namespace Communications //teleporter namespace
         private int _mTimer; //timer
         private MyObjectBuilder_EntityBase _objectBuilder;
         //private AntennaManager AM = new AntennaManager();
-        private IMyTextPanel _commPanel; //for use later
+        private IMyTextPanel commPanel; //for use later
         public bool Isactive; //bool determining whether a CommLink works or not
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
@@ -40,6 +40,7 @@ namespace Communications //teleporter namespace
             Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
             //Door state updated every 10th/ 100th frame
 
+            Isactive = true;
         }
 
         public override void UpdateAfterSimulation100()
@@ -51,9 +52,8 @@ namespace Communications //teleporter namespace
         public override void UpdateBeforeSimulation10() //rewriting the Comm update stuff, activating every 10 frames
         {
             var myname = _commPanel.DisplayNameText; //create string myname, name of Comm
-
+          
             if (!myname.Contains("Comm")) return;
-
 
             if (myname.Contains("Main"))
             {
@@ -61,9 +61,9 @@ namespace Communications //teleporter namespace
             }
             if (myname.Contains("Ship"))
             {
-
                 var fullString = "";
-
+                
+                commPanel.WritePublicText(fullString);
                 _commPanel.WritePublicText(fullString);
                 _commPanel.GetTopMostParent().Physics.UpdateAccelerations();
 
