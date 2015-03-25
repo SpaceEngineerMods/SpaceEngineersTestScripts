@@ -28,8 +28,9 @@ namespace Communications //teleporter namespace
         public bool IsComm; //Is it a communications panel?
         private int _mTimer; //timer
         private MyObjectBuilder_EntityBase _objectBuilder;
-        //private AntennaManager AM = new AntennaManager();
-        private IMyTextPanel commPanel; //for use later
+       
+        private AntennaManager _antennaManager;
+        private IMyTextPanel _commPanel; //for use later
         
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
@@ -56,7 +57,7 @@ namespace Communications //teleporter namespace
 
             if (myname.Contains("Main"))
             {
-                commPanel.WritePublicText("");
+                _commPanel.WritePublicText("");
                 var validConnections = _antennaManager.GetValidConnections();
                 var shipName = "";
                 int number = 0;
@@ -68,9 +69,9 @@ namespace Communications //teleporter namespace
                     number++;
                 }
               
-                commPanel.WritePublicText(number +"\n" + shipName);
-                commPanel.ShowPublicTextOnScreen();
-                commPanel.SetValueFloat("FontSize", 1.0f);
+                _commPanel.WritePublicText(number +"\n" + shipName);
+                _commPanel.ShowPublicTextOnScreen();
+                _commPanel.SetValueFloat("FontSize", 1.0f);
                 //not done
             }
             if (myname.Contains("Ship"))
@@ -78,7 +79,7 @@ namespace Communications //teleporter namespace
 
                 var fullString = "";
                 
-                commPanel.WritePublicText(fullString);
+                _commPanel.WritePublicText(fullString);
                 _commPanel.WritePublicText(fullString);
                 _commPanel.GetTopMostParent().Physics.UpdateAccelerations();
 
