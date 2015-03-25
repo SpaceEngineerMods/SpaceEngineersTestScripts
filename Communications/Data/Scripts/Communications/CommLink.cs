@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
+
+using System.Linq;
 using Sandbox.Common;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
@@ -29,7 +30,7 @@ namespace Communications //teleporter namespace
         private MyObjectBuilder_EntityBase _objectBuilder;
         //private AntennaManager AM = new AntennaManager();
         private IMyTextPanel commPanel; //for use later
-        public bool Isactive; //bool determining whether a CommLink works or not
+        
 
         public override void Init(MyObjectBuilder_EntityBase objectBuilder)
         //initializes object, overwrites original object code making it an communications panel
@@ -40,27 +41,41 @@ namespace Communications //teleporter namespace
             Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
             //Door state updated every 10th/ 100th frame
 
-            Isactive = true;
+            _antennaManager = new AntennaManager();
         }
 
-        public override void UpdateAfterSimulation100()
+        public override void UpdateAfterSimulation10()
         {
 
         }
 
         //This is the actual check for teleportation
-        public override void UpdateBeforeSimulation10() //rewriting the Comm update stuff, activating every 10 frames
+        public override void UpdateBeforeSimulation100() //rewriting the Comm update stuff, activating every 10 frames
         {
             var myname = _commPanel.DisplayNameText; //create string myname, name of Comm
-          
-            if (!myname.Contains("Comm")) return;
 
             if (myname.Contains("Main"))
             {
+                commPanel.WritePublicText("");
+                var validConnections = _antennaManager.GetValidConnections();
+                var shipName = "";
+                int number = 0;
+                foreach (var hash in validConnections)
+                {
+                    shipName += "\n Connections #" + number + "\n";
+
+                    shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
+                    number++;
+                }
+              
+                commPanel.WritePublicText(number +"\n" + shipName);
+                commPanel.ShowPublicTextOnScreen();
+                commPanel.SetValueFloat("FontSize", 1.0f);
                 //not done
             }
             if (myname.Contains("Ship"))
             {
+
                 var fullString = "";
                 
                 commPanel.WritePublicText(fullString);

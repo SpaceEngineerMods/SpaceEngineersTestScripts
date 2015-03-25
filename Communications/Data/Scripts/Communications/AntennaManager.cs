@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
@@ -16,92 +17,101 @@ namespace Communications
     public class AntennaManager //creates teleportation manager
     {
         public List<IMySlimBlock> CommMainList = new List<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> CommPortList = new List<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> WorkingAntennas = new List<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> WorkingAntennaTurrets = new List<IMySlimBlock>(); //create new list of blocks
+        private List<IMySlimBlock> _commPortList = new List<IMySlimBlock>(); //create new list of blocks
+        private List<IMySlimBlock> _workingAntennas = new List<IMySlimBlock>(); //create new list of blocks
+        private List<IMySlimBlock> _workingAntennaTurrets = new List<IMySlimBlock>(); //create new list of blocks
 
-        public void BlocksUpdate()
+        private void BlocksUpdate()
         {
             {
                 var hash = new HashSet<IMyEntity>(); //Creates new IMyEntity hash set
 
                 MyAPIGateway.Entities.GetEntities(hash, x => x is IMyCubeGrid); //puts all cube grids in hash
-
-                foreach (var entity in hash) //for each entity in hash
+                CommMainList.Clear();
+                _commPortList.Clear();
+                _workingAntennaTurrets.Clear();
+                _workingAntennas.Clear();
+                foreach (var grid in hash.Select(entity => entity as IMyCubeGrid))
                 {
-                    var grid = entity as IMyCubeGrid; //creates grid based around each entity in hash
-
                     try //try this out because if wrong it breaks game
                     {
-                        grid.GetBlocks(CommPortList,
-                            x =>
-                                x.FatBlock is IMyTextPanel &&
-                                (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") && (x.FatBlock as IMyTerminalBlock)
-                                .CustomName.Contains("Port") && this.IsActive(x.FatBlock))
-                        ; //Checks if it is an active Comm that contains portal
+                        if (grid != null)
+                            grid.GetBlocks(_commPortList,
+                                x =>
+                                    x.FatBlock is IMyTextPanel &&
+                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") && (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Port") && IsActive(x.FatBlock))
+                                ; //Checks if it is an active Comm that contains portal
                     }
                     catch
                     {
-                       
+                        // ignored
                     }
                     try //try this out because if wrong it breaks game
                     {
-                        grid.GetBlocks(CommPortList,
-                            x =>
-                                x.FatBlock is IMyTextPanel &&
-                                (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") &&
-                                (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Main") && this.IsActive(x.FatBlock));
-                            //Checks if it is an active Comm that contains portal
+                        if (grid != null)
+                            grid.GetBlocks(_commPortList,
+                                x =>
+                                    x.FatBlock is IMyTextPanel &&
+                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") &&
+                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Main") && IsActive(x.FatBlock));
+                        //Checks if it is an active Comm that contains portal
                     }
                     catch
                     {
+                        // ignored
                     }
                     try //try this out because if wrong it breaks game
                     {
-                        grid.GetBlocks(CommPortList, x => x.FatBlock is IMyRadioAntenna && this.IsActive(x.FatBlock));
-                            //Checks if it is an active Comm that contains portal
+                        if (grid != null)
+                            grid.GetBlocks(_workingAntennas, x => x.FatBlock is IMyRadioAntenna && IsActive(x.FatBlock));
+                        //Checks if it is an active Comm that contains portal
                     }
                     catch
                     {
+                        // ignored
                     }
                     try //try this out because if wrong it breaks game
                     {
-                        grid.GetBlocks(CommPortList, x => x.FatBlock is IMyLaserAntenna && this.IsActive(x.FatBlock));
-                            //Checks if it is an active Comm that contains portal
+                        if (grid != null)
+                            grid.GetBlocks(_workingAntennaTurrets, x => x.FatBlock is IMyLaserAntenna && IsActive(x.FatBlock));
+                        //Checks if it is an active Comm that contains portal
                     }
                     catch
                     {
+                        // ignored
                     }
                 }
             } //end of commlist creation
         }
 
-        public HashSet<HashSet<IMyEntity>> GetValidConnections()
+        public IEnumerable<HashSet<IMyEntity>> GetValidConnections()
         {
             BlocksUpdate();
             var connections = new HashSet<HashSet<IMyEntity>>(); //Creates new IMyEntity hash set
-            foreach (var antenna in WorkingAntennas)
+            
+            foreach (var antenna in _workingAntennas)
             {
+               
                 var subConnections = new HashSet<IMyEntity> {antenna.FatBlock};
-                var position = antenna.FatBlock.WorldAABB.Center;
+                var position = antenna.FatBlock.GetPosition();
                 var radius = ((IMyRadioAntenna) antenna.FatBlock).Radius;
-                
-                foreach (var subAntenna in WorkingAntennas)
+
+                var antenna1 = antenna;
+                foreach (var subAntenna in _workingAntennas.Where(subAntenna => (position - (subAntenna.FatBlock.GetPosition())).Length() <= radius &&
+                                                                                antenna1.FatBlock.GetTopMostParent().EntityId != subAntenna.FatBlock.GetTopMostParent().EntityId))
                 {
-                    if ((position - (subAntenna.FatBlock.WorldAABB.Center)).Length() <= radius &&
-                        antenna.FatBlock.GetTopMostParent().EntityId != subAntenna.FatBlock.GetTopMostParent().EntityId)
-                    {
-                        subConnections.Add(subAntenna.FatBlock);
-                    }
+                    subConnections.Add(subAntenna.FatBlock);
                 }
                 connections.Add(subConnections);
             }
-            foreach (var turret in WorkingAntennaTurrets)
+
+            foreach (var turret in _workingAntennaTurrets)
             {
                 var subConnections = new HashSet<IMyEntity> {turret.FatBlock};
-                foreach (var subTurret in WorkingAntennaTurrets)
+
+                foreach (var subTurret in _workingAntennaTurrets)
                 {
-                    if (((IMyLaserAntenna) turret.FatBlock).TargetCoords == (subTurret.FatBlock.WorldAABB.Center))
+                    if (((IMyLaserAntenna) turret.FatBlock).TargetCoords == (subTurret.FatBlock.GetPosition()))
                         subConnections.Add(subTurret.FatBlock);
                 }
                 connections.Add(subConnections);
@@ -109,7 +119,7 @@ namespace Communications
             return connections;
         }
 
-        public bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
+        private static bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
         {
             return comm.IsWorking || comm.IsFunctional;
         }
