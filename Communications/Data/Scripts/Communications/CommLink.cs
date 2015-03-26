@@ -25,9 +25,10 @@ namespace Communications //teleporter namespace
     public class CommLink : MyGameLogicComponent
     //class CommLink, calls from game logic, further describes what a CommLink is
     {
-        private List<IMySlimBlock> OreDetectors; //create new list of blocks
-        private List<IMySlimBlock> Asteroids; //create new list of blocks
-        private List<IMySlimBlock> OreDeposits; //create new list of blocks
+        public List<IMySlimBlock> OreDetectors = new List<IMySlimBlock>(); //create new list of blocks
+        public List<IMySlimBlock> Asteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
+        public List<IMySlimBlock> ValidAsteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
+        public List<IMySlimBlock> OrePositions = new List<IMySlimBlock>(); //create new list of blocks
 
         private String _mostRecentText;
         private DateTime _mostRecentTime;
@@ -73,6 +74,7 @@ namespace Communications //teleporter namespace
         public override void UpdateBeforeSimulation100() //rewriting the Comm update stuff, activating every 10 frames
         {
             var myname = _commPanel.DisplayNameText; //create string myname, name of Comm
+
             _isComm = myname.Contains("Comm");
 
             if (!_isComm) return;
@@ -84,11 +86,9 @@ namespace Communications //teleporter namespace
             if (myname.Contains("Port"))
                 CommPort();//testing code
 
-            if (myname.Contains("Ore"))
-                GetOre();
-        }
-
-        private void GetAntenna()
+            
+            if (myname.Contains("Port"))
+		private void GetAntenna()
         {
             _commPanel.WritePublicText("");
             var validConnections = _antennaManager.GetValidConnections();
@@ -107,15 +107,60 @@ namespace Communications //teleporter namespace
             _commPanel.SetValueFloat("FontSize", 1.0f);
             //not done
         }
-        private void GetOre()
-        {
-            var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
-            ship.GetBlocks(OreDetectors, x =>
+
+            if (myname.Contains("Ore"))
             {
-                var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
-                return myTerminalBlock != null && (x.FatBlock is IMyOreDetector && IsActive(x.FatBlock));
-            });
+                OreDetectors.Clear();
+                ValidAsteroids.Clear();
+                MyAPIGateway.Entities.GetEntities(Asteroids, x => x is IMyVoxelMap && x.GetPosition());
+                var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
+                ship.GetBlocks(OreDetectors, x =>
+                {
+                    var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
+                    return myTerminalBlock != null && (x.FatBlock is IMyOreDetector);
+                });
+                string returnStr = "Test";
+                MyAPIGateway.Utilities.ShowMessage("Test 1", OreDetectors.Count.ToString());
+                foreach (var oreDetector in OreDetectors)
+                {
+                    MyAPIGateway.Utilities.ShowMessage("Test 2", OreDetectors.Count.ToString());
+                    var detector = oreDetector.FatBlock as IMyOreDetector;
+                    if (detector != null)
+                        returnStr += oreDetector.Position.ToString() + " TESTING" + detector.Range.ToString();
+                    if (oreDetector != null)
+                    {
+                        float Radius = 0;
+                        var myOreDetector = oreDetector.FatBlock as IMyOreDetector;
+                        if (myOreDetector != null)
+                        {
+                            Radius = myOreDetector.Range;
+                        }
+
             
+                        var asteroidPosition = oreDetector.FatBlock.GetPosition();
+
+                        foreach (
+                            var asteroid1 in
+                                Asteroids.Where(asteroid1 => (asteroidPosition - asteroid1.Position).length <= 10000))
+                        {
+                            if ((asteroid1 as IMyVoxelMap).DoOverlapSphereTest(Radius, asteroidPosition) == true)
+                            {
+                                MyAPIGateway.Utilities.ShowMessage("Test 3", OreDetectors.Count.ToString());
+                                ValidAsteroids.Add(asteroid1);
+                                float AsteroidCount = 0;
+                                OrePositions.Add(AsteroidCount);
+                            }
+                        }
+                    }
+                }
+                returnStr += "\n\n";
+                returnStr = ValidAsteroids.Aggregate(returnStr, (current, asteroid) => current + (asteroid.Position.ToString() + "\n "));
+                returnStr += "\n\n";
+                returnStr = OrePositions.Aggregate(returnStr, (current, ore) => current + ore.ToString());
+                _commPanel.WritePublicText(returnStr);
+                _commPanel.ShowPublicTextOnScreen();
+                _commPanel.SetValueFloat("FontSize", 1.0f);
+            }
         }
 
         private static bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
