@@ -26,9 +26,9 @@ namespace Communications //teleporter namespace
     //class CommLink, calls from game logic, further describes what a CommLink is
     {
         public List<IMySlimBlock> OreDetectors = new List<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> Asteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> ValidAsteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> OrePositions = new List<IMySlimBlock>(); //create new list of blocks
+        public HashSet<IMySlimBlock> Asteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
+        public HashSet<IMySlimBlock> ValidAsteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
+        public List<IMySlimBlock> OrePositions;  //create new list of blocks
 
         private String _mostRecentText;
         private DateTime _mostRecentTime;
@@ -52,9 +52,6 @@ namespace Communications //teleporter namespace
             //Door state updated every 10th/ 100th frame
 
             _antennaManager = new AntennaManager();
-            OreDetectors = new List<IMySlimBlock>();
-            Asteroids = new List<IMySlimBlock>();
-            OreDeposits = new List<IMySlimBlock>();
             _mostRecentTime = DateTime.Now;
         }
         public override void UpdateAfterSimulation()
@@ -78,41 +75,24 @@ namespace Communications //teleporter namespace
             _isComm = myname.Contains("Comm");
 
             if (!_isComm) return;
-            
-           
+
+
             if (myname.Contains("Main"))
                 GetAntenna();
-           
+
             if (myname.Contains("Port"))
-                CommPort();//testing code
+                CommPort(); //testing code
+
 
             
-            if (myname.Contains("Port"))
-		private void GetAntenna()
-        {
-            _commPanel.WritePublicText("");
-            var validConnections = _antennaManager.GetValidConnections();
-            var shipName = "";
-            int number = 0;
-            foreach (var hash in validConnections)
-            {
-                shipName += "\n Connections #" + number + "\n";
+        
 
-                shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
-                number++;
-            }
-
-            _commPanel.WritePublicText(number + "\n" + shipName);
-            _commPanel.ShowPublicTextOnScreen();
-            _commPanel.SetValueFloat("FontSize", 1.0f);
-            //not done
-        }
-
+     
             if (myname.Contains("Ore"))
             {
                 OreDetectors.Clear();
                 ValidAsteroids.Clear();
-                MyAPIGateway.Entities.GetEntities(Asteroids, x => x is IMyVoxelMap && x.GetPosition());
+                MyAPIGateway.Entities.GetEntities(Asteroids, x => x is IMyVoxelMap);
                 var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
                 ship.GetBlocks(OreDetectors, x =>
                 {
@@ -135,13 +115,10 @@ namespace Communications //teleporter namespace
                         {
                             Radius = myOreDetector.Range;
                         }
-
-            
                         var asteroidPosition = oreDetector.FatBlock.GetPosition();
-
                         foreach (
-                            var asteroid1 in
-                                Asteroids.Where(asteroid1 => (asteroidPosition - asteroid1.Position).length <= 10000))
+                        var asteroid1 in
+                        Asteroids.Where(asteroid1 => (asteroidPosition - asteroid1.Position).length <= 10000))
                         {
                             if ((asteroid1 as IMyVoxelMap).DoOverlapSphereTest(Radius, asteroidPosition) == true)
                             {
@@ -161,6 +138,26 @@ namespace Communications //teleporter namespace
                 _commPanel.ShowPublicTextOnScreen();
                 _commPanel.SetValueFloat("FontSize", 1.0f);
             }
+        }
+
+           private void GetAntenna()
+        {
+            _commPanel.WritePublicText("");
+            var validConnections = _antennaManager.GetValidConnections();
+            var shipName = "";
+            int number = 0;
+            foreach (var hash in validConnections)
+            {
+                shipName += "\n Connections #" + number + "\n";
+
+                shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
+                number++;
+            }
+
+            _commPanel.WritePublicText(number + "\n" + shipName);
+            _commPanel.ShowPublicTextOnScreen();
+            _commPanel.SetValueFloat("FontSize", 1.0f);
+            //not done
         }
 
         private static bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
