@@ -122,28 +122,37 @@ namespace Communications
 
         public List<IMyTextPanel> GetAvailableCommPortList(Sandbox.ModAPI.IMyCubeGrid referenceGrid)
         {
+            //Update the lists
             BlocksUpdate();
            
+            // get the antenna connecitons
             var antennaConnections = GetValidConnections();
+
+            //find to see what conneciton the antenna is connected to should only  return a single list
             var availableAntennasHash = antennaConnections.Where(x => x.First().GetTopMostParent().EntityId == referenceGrid.EntityId);
             var availableAntennas = new List<IMyEntity>();
+           // removing rendunant top list
             var antennasfirstOrDefault = availableAntennasHash.FirstOrDefault();
 
+            //null checking
             if (antennasfirstOrDefault != null)
-
             availableAntennas.AddRange(antennasfirstOrDefault);
+
 
             var commList = new List<IMyTextPanel>();
             var commSlimBlockList = new List<IMySlimBlock>();
 
+            //adding the antennas to a list
             foreach(var antenna in availableAntennas)
                commSlimBlockList.AddRange(_commPortList.Where(comm1 => comm1.FatBlock.GetTopMostParent().EntityId == antenna.GetTopMostParent().EntityId ));
-
+            
+            //polymorphism is great
             commSlimBlockList.ForEach(comm => commList.Add(comm.FatBlock as IMyTextPanel));
 
             return commList;
 
         }
+
 
         private static bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
         {

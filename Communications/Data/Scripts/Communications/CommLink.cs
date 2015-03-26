@@ -5,6 +5,7 @@ using System.Linq;
 using Sandbox.Common;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
@@ -22,9 +23,10 @@ namespace Communications //teleporter namespace
     public class CommLink : MyGameLogicComponent
     //class CommLink, calls from game logic, further describes what a CommLink is
     {
-        private List<IMySlimBlock> OreDetectors = new List<IMySlimBlock>(); //create new list of blocks
-        private List<IMySlimBlock> Asteroids = new List<IMySlimBlock>(); //create new list of blocks
-        private List<IMySlimBlock> OreDeposits = new List<IMySlimBlock>(); //create new list of blocks
+        private List<IMySlimBlock> OreDetectors; //create new list of blocks
+        private List<IMySlimBlock> Asteroids; //create new list of blocks
+        private List<IMySlimBlock> OreDeposits; //create new list of blocks
+        private List<String> textList; 
         private bool _isComm; //Is it a communications panel?
         private int _mTimer; //timer
         private MyObjectBuilder_EntityBase _objectBuilder;
@@ -39,10 +41,14 @@ namespace Communications //teleporter namespace
             _objectBuilder = objectBuilder;
             _commPanel = Entity as IMyTextPanel; //says this entity is an IMyTextPanel Called entrance_g
 
+
             Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
             //Door state updated every 10th/ 100th frame
 
             _antennaManager = new AntennaManager();
+            OreDetectors = new List<IMySlimBlock>();
+            Asteroids = new List<IMySlimBlock>();
+            OreDeposits = new List<IMySlimBlock>();
         }
 
         public override void UpdateAfterSimulation10()
@@ -50,51 +56,7 @@ namespace Communications //teleporter namespace
            
             if (!_isComm) return;
             if (_commPanel.DisplayNameText.Contains("Ship"))
-            {
-
-                var fullString = "";
-
-                _commPanel.WritePublicText(fullString);
-                _commPanel.WritePublicText(fullString);
-                _commPanel.GetTopMostParent().Physics.UpdateAccelerations();
-
-                var shipPosition = _commPanel.GetTopMostParent().GetPosition();
-                shipPosition = new VRageMath.Vector3D(Math.Round(shipPosition.X, 4), Math.Round(shipPosition.Y, 4), Math.Round(shipPosition.Z, 4));
-
-                var shipVelocity = _commPanel.GetTopMostParent().Physics.LinearVelocity;
-                shipVelocity.X = (float)Math.Round(shipVelocity.X, 4);
-                shipVelocity.Y = (float)Math.Round(shipVelocity.Y, 4);
-                shipVelocity.Z = (float)Math.Round(shipVelocity.Z, 4);
-
-                var shipAcceleration = _commPanel.GetTopMostParent().Physics.LinearAcceleration;
-                shipAcceleration.X = (float)Math.Round(shipAcceleration.X, 4);
-                shipAcceleration.Y = (float)Math.Round(shipAcceleration.Y, 4);
-                shipAcceleration.Z = (float)Math.Round(shipAcceleration.Z, 4);
-
-                var shipAngle = _commPanel.GetTopMostParent().WorldMatrix.GetOrientation();
-
-                var shipRotation = _commPanel.GetTopMostParent().Physics.AngularVelocity;
-                shipRotation.X = (float)Math.Round(shipRotation.X, 4);
-                shipRotation.Y = (float)Math.Round(shipRotation.Y, 4);
-                shipRotation.Z = (float)Math.Round(shipRotation.Z, 4);
-
-                var shipRotationAcceleration = _commPanel.GetTopMostParent().Physics.AngularAcceleration;
-                shipRotationAcceleration.X = (float)Math.Round(shipRotationAcceleration.X, 4);
-                shipRotationAcceleration.Y = (float)Math.Round(shipRotationAcceleration.Y, 4);
-                shipRotationAcceleration.Z = (float)Math.Round(shipRotationAcceleration.Z, 4);
-
-                var radianAngle = new Vector3D(Math.Round(Math.Atan2(shipAngle.M32, shipAngle.M33), 4),
-                        Math.Round(Math.Atan2(-shipAngle.M31, Math.Sqrt(Math.Pow(shipAngle.M32, 2) + Math.Pow(shipAngle.M33, 2))), 4),
-                    Math.Round(Math.Atan2(shipAngle.M21, shipAngle.M11), 4));
-
-                fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle "
-                    + radianAngle + "\n Ship Rot " + shipRotation + "\n Ship Rot Accel " + shipRotationAcceleration;
-
-                _commPanel.WritePublicText(fullString);
-                _commPanel.ShowPublicTextOnScreen();
-                _commPanel.SetValueFloat("FontSize", 1.0f);
-
-            }
+                ShipInfo();
         }
 
         //This is the actual check for teleportation
@@ -102,40 +64,39 @@ namespace Communications //teleporter namespace
         {
             var myname = _commPanel.DisplayNameText; //create string myname, name of Comm
             _isComm = myname.Contains("Comm");
+
             if (!_isComm) return;
             
            
             if (myname.Contains("Main"))
-            {
-                _commPanel.WritePublicText("");
-                var validConnections = _antennaManager.GetValidConnections();
-                var shipName = "";
-                int number = 0;
-                foreach (var hash in validConnections)
-                {
-                    shipName += "\n Connections #" + number + "\n";
-
-                    shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
-                    number++;
-                }
-              
-                _commPanel.WritePublicText(number +"\n" + shipName);
-                _commPanel.ShowPublicTextOnScreen();
-                _commPanel.SetValueFloat("FontSize", 1.0f);
-                //not done
-            }
+                getAntenna();
            
             if (myname.Contains("Port"))
-            {
-                //not done
-            }
+                //testing code
+               Commport();
             if (myname.Contains("Ore"))
-            {
                 GetOre();
-                //not done
-            }
         }
 
+        private void getAntenna()
+        {
+            _commPanel.WritePublicText("");
+            var validConnections = _antennaManager.GetValidConnections();
+            var shipName = "";
+            int number = 0;
+            foreach (var hash in validConnections)
+            {
+                shipName += "\n Connections #" + number + "\n";
+
+                shipName = hash.Aggregate(shipName, (current, antenna) => current + ((antenna as Sandbox.ModAPI.IMyTerminalBlock).CustomName + "\n"));
+                number++;
+            }
+
+            _commPanel.WritePublicText(number + "\n" + shipName);
+            _commPanel.ShowPublicTextOnScreen();
+            _commPanel.SetValueFloat("FontSize", 1.0f);
+            //not done
+        }
         private void GetOre()
         {
             var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
@@ -157,6 +118,65 @@ namespace Communications //teleporter namespace
             Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
         }
 
+        private void Commport()
+        {
+            var time = MyAPIGateway.Session.GameDateTime;
+            var commportlist = _antennaManager.GetAvailableCommPortList(_commPanel.GetTopMostParent() as Sandbox.ModAPI.IMyCubeGrid);
+            foreach (var comm in commportlist)
+            {
+                comm.WritePublicText(time.ToShortTimeString());
+                comm.ShowPublicTextOnScreen();
+                comm.SetValueFloat("FontSize", 1.0f);
+            }
+
+        }
+
+
+        private void ShipInfo()
+        {
+            var fullString = "";
+
+            _commPanel.WritePublicText(fullString);
+            _commPanel.WritePublicText(fullString);
+            _commPanel.GetTopMostParent().Physics.UpdateAccelerations();
+
+            var shipPosition = _commPanel.GetTopMostParent().GetPosition();
+            shipPosition = new VRageMath.Vector3D(Math.Round(shipPosition.X, 4), Math.Round(shipPosition.Y, 4), Math.Round(shipPosition.Z, 4));
+
+            var shipVelocity = _commPanel.GetTopMostParent().Physics.LinearVelocity;
+            shipVelocity.X = (float)Math.Round(shipVelocity.X, 4);
+            shipVelocity.Y = (float)Math.Round(shipVelocity.Y, 4);
+            shipVelocity.Z = (float)Math.Round(shipVelocity.Z, 4);
+
+            var shipAcceleration = _commPanel.GetTopMostParent().Physics.LinearAcceleration;
+            shipAcceleration.X = (float)Math.Round(shipAcceleration.X, 4);
+            shipAcceleration.Y = (float)Math.Round(shipAcceleration.Y, 4);
+            shipAcceleration.Z = (float)Math.Round(shipAcceleration.Z, 4);
+
+            var shipAngle = _commPanel.GetTopMostParent().WorldMatrix.GetOrientation();
+
+            var shipRotation = _commPanel.GetTopMostParent().Physics.AngularVelocity;
+            shipRotation.X = (float)Math.Round(shipRotation.X, 4);
+            shipRotation.Y = (float)Math.Round(shipRotation.Y, 4);
+            shipRotation.Z = (float)Math.Round(shipRotation.Z, 4);
+
+            var shipRotationAcceleration = _commPanel.GetTopMostParent().Physics.AngularAcceleration;
+            shipRotationAcceleration.X = (float)Math.Round(shipRotationAcceleration.X, 4);
+            shipRotationAcceleration.Y = (float)Math.Round(shipRotationAcceleration.Y, 4);
+            shipRotationAcceleration.Z = (float)Math.Round(shipRotationAcceleration.Z, 4);
+
+            var radianAngle = new Vector3D(Math.Round(Math.Atan2(shipAngle.M32, shipAngle.M33), 4),
+                    Math.Round(Math.Atan2(-shipAngle.M31, Math.Sqrt(Math.Pow(shipAngle.M32, 2) + Math.Pow(shipAngle.M33, 2))), 4),
+                Math.Round(Math.Atan2(shipAngle.M21, shipAngle.M11), 4));
+
+            fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle "
+                + radianAngle + "\n Ship Rot " + shipRotation + "\n Ship Rot Accel " + shipRotationAcceleration;
+
+            _commPanel.WritePublicText(fullString);
+            _commPanel.ShowPublicTextOnScreen();
+            _commPanel.SetValueFloat("FontSize", 1.0f);
+
+        }
         /*if (isportal && isactive)//if isportal is true
             {
                     if (man.Teleportplayer(entrance_g, exit_g, player))//no idea what this says
