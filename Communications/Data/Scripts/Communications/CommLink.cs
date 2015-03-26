@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using Sandbox.Common;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
@@ -26,7 +28,10 @@ namespace Communications //teleporter namespace
         private List<IMySlimBlock> OreDetectors; //create new list of blocks
         private List<IMySlimBlock> Asteroids; //create new list of blocks
         private List<IMySlimBlock> OreDeposits; //create new list of blocks
-        private List<String> textList; 
+
+        private String _mostRecentText;
+        private DateTime _mostRecentTime;
+
         private bool _isComm; //Is it a communications panel?
         private int _mTimer; //timer
         private MyObjectBuilder_EntityBase _objectBuilder;
@@ -49,6 +54,11 @@ namespace Communications //teleporter namespace
             OreDetectors = new List<IMySlimBlock>();
             Asteroids = new List<IMySlimBlock>();
             OreDeposits = new List<IMySlimBlock>();
+            _mostRecentTime = DateTime.Now;
+        }
+        public override void UpdateAfterSimulation()
+        {
+            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
         }
 
         public override void UpdateAfterSimulation10()
@@ -69,16 +79,16 @@ namespace Communications //teleporter namespace
             
            
             if (myname.Contains("Main"))
-                getAntenna();
+                GetAntenna();
            
             if (myname.Contains("Port"))
-                //testing code
-               Commport();
+                CommPort();//testing code
+
             if (myname.Contains("Ore"))
                 GetOre();
         }
 
-        private void getAntenna()
+        private void GetAntenna()
         {
             _commPanel.WritePublicText("");
             var validConnections = _antennaManager.GetValidConnections();
@@ -103,30 +113,63 @@ namespace Communications //teleporter namespace
             ship.GetBlocks(OreDetectors, x =>
             {
                 var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
-                return myTerminalBlock != null && (x.FatBlock is IMyOreDetector && this.IsActive(x.FatBlock));
+                return myTerminalBlock != null && (x.FatBlock is IMyOreDetector && IsActive(x.FatBlock));
             });
             
         }
 
-        private bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
+        private static bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
         {
             return comm.IsWorking || comm.IsFunctional;
         }
 
-        public override void UpdateAfterSimulation()
+       
+        private void CommPort()
         {
-            Entity.NeedsUpdate |= MyEntityUpdateEnum.EACH_FRAME | MyEntityUpdateEnum.EACH_10TH_FRAME | MyEntityUpdateEnum.EACH_100TH_FRAME;
-        }
-
-        private void Commport()
-        {
-            var time = MyAPIGateway.Session.GameDateTime;
+            var time = DateTime.Now;
             var commportlist = _antennaManager.GetAvailableCommPortList(_commPanel.GetTopMostParent() as Sandbox.ModAPI.IMyCubeGrid);
+            
+            
+           
             foreach (var comm in commportlist)
             {
-                comm.WritePublicText(time.ToShortTimeString());
+                DateTime commUpdate;
+                try
+                {
+                    commUpdate = Convert.ToDateTime(comm.GetPublicTitle());
+                }
+                catch
+                {
+                    comm.WritePublicText(_mostRecentText);
+                    comm.WritePublicTitle(_mostRecentTime.ToLongTimeString());
+                    comm.ShowPublicTextOnScreen();
+                    continue;
+                }
+
+                if (commUpdate.Subtract(_mostRecentTime).Seconds < 0)
+                {
+                    comm.WritePublicText(_mostRecentText);
+                    comm.WritePublicTitle(_mostRecentTime.ToLongTimeString());
+                    //MyAPIGateway.Utilities.ShowMessage("Console Test", "Old Time" + commUpdate + " " + time);
+                    comm.ShowPublicTextOnScreen();
+                    continue;
+                }
+
+                if (comm.GetPublicText() != _mostRecentText)
+                {
+                    _mostRecentTime = time;
+                    _mostRecentText = _commPanel.GetPublicText();
+                    comm.WritePublicTitle(time.ToLongTimeString());
+                    //MyAPIGateway.Utilities.ShowMessage("Console Test","Most Recent Time " + _mostRecentText);
+                    comm.ShowPublicTextOnScreen();
+                }
+
+                comm.WritePublicText(_mostRecentText);
+                comm.WritePublicTitle(_mostRecentTime.ToLongTimeString());
                 comm.ShowPublicTextOnScreen();
-                comm.SetValueFloat("FontSize", 1.0f);
+               
+
+                
             }
 
         }
@@ -177,55 +220,7 @@ namespace Communications //teleporter namespace
             _commPanel.SetValueFloat("FontSize", 1.0f);
 
         }
-        /*if (isportal && isactive)//if isportal is true
-            {
-                    if (man.Teleportplayer(entrance_g, exit_g, player))//no idea what this says
-                    {
-                        WasUsed = true;//set portal wasused to true
-                        isactive = false;//turn off isactive, starts cooldown
-                    }
-                }
-            }*/
-        //creating list of portals
-        /*public List<Sandbox.ModAPI.IMySlimBlock> GetCommList()//list of Valid Communication textpanels, called up by GetcommList()
-        {
-            HashSet<IMyEntity> hash = new HashSet<IMyEntity>();//Creates new IMyEntity hash set
-            List<Sandbox.ModAPI.IMySlimBlock> commList = new List<Sandbox.ModAPI.IMySlimBlock>();//create new list of blocks
-            Sandbox.ModAPI.MyAPIGateway.Entities.GetEntities(hash, (x) => x is Sandbox.ModAPI.IMyCubeGrid);//puts all cube grids in hash
-            foreach (var entity in hash)//for each entity in hash
-            {
-                Sandbox.ModAPI.IMyCubeGrid grid = entity as Sandbox.ModAPI.IMyCubeGrid;//creates grid based around each entity in hash
-                try//try this out because if wrong it breaks game
-                {
-                    grid.GetBlocks(commList, (x) => x.FatBlock is IMyTextPanel && (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") && man.isActive(x.FatBlock));//Checks if it is an active Comm that contains portal
-                }
-                catch// if the try didnt work
-                {
-                    MyAPIGateway.Utilities.ShowNotification("Error When trying to find Comms", 250);//say there was an error
-                }
-            }
-            return commList;
-        }//end of commlist creation
-        //Will rewrite bellow to handle antenna connections
-        private IMyTextPanel GetNearestcommOnDifferentGrid(IMyTextPanel sourcecomm)//this is the check for determining nearest active comm in list
-        {
-            List<Sandbox.ModAPI.IMySlimBlock> commList = GetCommList();//commList is commList from above
-            double distance = 0.0d;//distance variable, also makes first comm checked in the for each below relative 0
-            IMyTextPanel nearest = null;//set nearest variable of IMyTextPanel to null
-            foreach (var comm in commList)//for each comm in commList(every active Comm)
-            {
-                if (comm.IsDestroyed || !((comm.FatBlock as IMyTextPanel).Enabled)/* I think this means that the Comm is on, not off in settings  || !comm.FatBlock.IsFunctional || (sourcecomm.GetPosition() == comm.FatBlock.GetPosition()))//Skip disabled, or activated or destroyed comms
-                    continue;//skips current comm in commList, goes onto next comm
-                if ((distance == 0.0d || (sourcecomm.GetPosition() - comm.FatBlock.GetPosition()).Length() < distance) && (sourcecomm.CustomName == (comm.FatBlock as IMyTerminalBlock).CustomName)) //if it is the first comm checked or it is closest comm so far and if the thing has the same name
-                {
-                    nearest = comm.FatBlock as IMyTextPanel;//sets this comm as the closest
-                    distance = (comm.GetPosition() - comm.FatBlock.GetPosition()).Length();//sets distance to length of closest comm
-                }
-            }
-            return nearest;//returns the closest comm checked
-        }// end of get nearest comm
-        */
-        //useless stuff, DO NOT DELETE 
+      
 
         public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false) // Does nothing
         {
