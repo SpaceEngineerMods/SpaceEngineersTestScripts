@@ -19,6 +19,10 @@ using IMyTerminalBlock = Sandbox.ModAPI.IMyTerminalBlock;
 
 //Basic imports
 
+//ToDO:
+//Fix Ore Detection
+//Clean up code
+
 namespace Communications //teleporter namespace
 {
     [MyEntityComponentDescriptor(typeof(MyObjectBuilder_TextPanel))] //Type of TextPanel, applies to TextPanels
@@ -26,9 +30,9 @@ namespace Communications //teleporter namespace
     //class CommLink, calls from game logic, further describes what a CommLink is
     {
         public List<IMySlimBlock> OreDetectors = new List<IMySlimBlock>(); //create new list of blocks
-        public HashSet<IMySlimBlock> Asteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
-        public HashSet<IMySlimBlock> ValidAsteroids = new HashSet<IMySlimBlock>(); //create new list of blocks
-        public List<IMySlimBlock> OrePositions;  //create new list of blocks
+        public HashSet<IMyEntity> Asteroids = new HashSet<IMyEntity>(); //create new list of blocks
+        public HashSet<IMyEntity> ValidAsteroids = new HashSet<IMyEntity>(); //create new list of blocks
+        public List<Vector3> OrePositions;  //create new list of blocks
 
         private String _mostRecentText;
         private DateTime _mostRecentTime;
@@ -52,7 +56,7 @@ namespace Communications //teleporter namespace
             //Door state updated every 10th/ 100th frame
 
             _antennaManager = new AntennaManager();
-            _mostRecentTime = DateTime.Now;
+            _mostRecentTime = DateTime.MinValue;
         }
         public override void UpdateAfterSimulation()
         {
@@ -92,51 +96,63 @@ namespace Communications //teleporter namespace
             {
                 OreDetectors.Clear();
                 ValidAsteroids.Clear();
-                MyAPIGateway.Entities.GetEntities(Asteroids, x => x is IMyVoxelMap);
-                var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
-                ship.GetBlocks(OreDetectors, x =>
+                try
                 {
-                    var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
-                    return myTerminalBlock != null && (x.FatBlock is IMyOreDetector);
-                });
-                string returnStr = "Test";
-                MyAPIGateway.Utilities.ShowMessage("Test 1", OreDetectors.Count.ToString());
-                foreach (var oreDetector in OreDetectors)
-                {
-                    MyAPIGateway.Utilities.ShowMessage("Test 2", OreDetectors.Count.ToString());
-                    var detector = oreDetector.FatBlock as IMyOreDetector;
-                    if (detector != null)
-                        returnStr += oreDetector.Position.ToString() + " TESTING" + detector.Range.ToString();
-                    if (oreDetector != null)
+
+
+                    MyAPIGateway.Entities.GetEntities(Asteroids, x => x is IMyVoxelMap);
+                    var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
+                    ship.GetBlocks(OreDetectors, x =>
                     {
-                        float Radius = 0;
-                        var myOreDetector = oreDetector.FatBlock as IMyOreDetector;
-                        if (myOreDetector != null)
+                        var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
+                        return myTerminalBlock != null && (x.FatBlock is IMyOreDetector);
+                    });
+                    string returnStr = "Test";
+                    MyAPIGateway.Utilities.ShowMessage("Test 1", OreDetectors.Count.ToString());
+                    foreach (var oreDetector in OreDetectors)
+                    {
+                        MyAPIGateway.Utilities.ShowMessage("Test 2", OreDetectors.Count.ToString());
+                        var detector = oreDetector.FatBlock as IMyOreDetector;
+                        if (detector != null)
+                            returnStr += oreDetector.Position.ToString() + " TESTING" + detector.Range.ToString();
+                        if (oreDetector != null)
                         {
-                            Radius = myOreDetector.Range;
-                        }
-                        var asteroidPosition = oreDetector.FatBlock.GetPosition();
-                        foreach (
-                        var asteroid1 in
-                        Asteroids.Where(asteroid1 => (asteroidPosition - asteroid1.Position).length <= 10000))
-                        {
-                            if ((asteroid1 as IMyVoxelMap).DoOverlapSphereTest(Radius, asteroidPosition) == true)
+                            float Radius = 0;
+                            var myOreDetector = oreDetector.FatBlock as IMyOreDetector;
+                            if (myOreDetector != null)
                             {
-                                MyAPIGateway.Utilities.ShowMessage("Test 3", OreDetectors.Count.ToString());
-                                ValidAsteroids.Add(asteroid1);
-                                float AsteroidCount = 0;
-                                OrePositions.Add(AsteroidCount);
+                                Radius = myOreDetector.Range;
+                            }
+                            var asteroidPosition = oreDetector.FatBlock.GetPosition();
+
+                            foreach (
+                                var asteroid1 in
+                                    Asteroids.Where(
+                                        asteroid1 => (asteroidPosition - asteroid1.GetPosition()).Length() <= 10000))
+                            {
+                                if ((asteroid1 as IMyVoxelMap).DoOverlapSphereTest(Radius, asteroidPosition))
+                                {
+                                    MyAPIGateway.Utilities.ShowMessage("Test 3", OreDetectors.Count.ToString());
+                                    ValidAsteroids.Add(asteroid1);
+                                    //OrePositions.Add(asteroid1.GetPosition());
+                                    
+                                }
                             }
                         }
                     }
+                    returnStr += "\n\n";
+                    returnStr = ValidAsteroids.Aggregate(returnStr,
+                        (current, asteroid) => current + (asteroid.WorldAABB.Center.ToString() + "\n "));
+                    returnStr += "\n\n";
+                    //returnStr = OrePositions.Aggregate(returnStr, (current, ore) => current + ore.ToString());
+                    _commPanel.WritePublicText(returnStr);
+                    _commPanel.ShowPublicTextOnScreen();
+                    _commPanel.SetValueFloat("FontSize", 1.0f);
                 }
-                returnStr += "\n\n";
-                returnStr = ValidAsteroids.Aggregate(returnStr, (current, asteroid) => current + (asteroid.Position.ToString() + "\n "));
-                returnStr += "\n\n";
-                returnStr = OrePositions.Aggregate(returnStr, (current, ore) => current + ore.ToString());
-                _commPanel.WritePublicText(returnStr);
-                _commPanel.ShowPublicTextOnScreen();
-                _commPanel.SetValueFloat("FontSize", 1.0f);
+                catch
+                {
+                    //ignored
+                }
             }
         }
 
@@ -175,44 +191,38 @@ namespace Communications //teleporter namespace
            
             foreach (var comm in commportlist)
             {
-                DateTime commUpdate;
+                long commUpdate;
                 try
                 {
-                    commUpdate = Convert.ToDateTime(comm.GetPublicTitle());
+                    commUpdate = Convert.ToInt64(comm.GetPublicTitle());
                 }
                 catch
                 {
+                    comm.WritePublicTitle("00000000000");
+                    comm.ShowPublicTextOnScreen();
+                    continue;
+                }
+                if (commUpdate - _mostRecentTime.Ticks < 0)
+                {
                     comm.WritePublicText(_mostRecentText);
-                    comm.WritePublicTitle(_mostRecentTime.ToLongTimeString());
+                    comm.WritePublicTitle(_mostRecentTime.Ticks.ToString());
                     comm.ShowPublicTextOnScreen();
                     continue;
                 }
 
-                if (commUpdate.Subtract(_mostRecentTime).Seconds < 0)
-                {
-                    comm.WritePublicText(_mostRecentText);
-                    comm.WritePublicTitle(_mostRecentTime.ToLongTimeString());
-                    //MyAPIGateway.Utilities.ShowMessage("Console Test", "Old Time" + commUpdate + " " + time);
-                    comm.ShowPublicTextOnScreen();
-                    continue;
-                }
-
-                if (comm.GetPublicText() != _mostRecentText)
-                {
-                    _mostRecentTime = time;
-                    _mostRecentText = _commPanel.GetPublicText();
-                    comm.WritePublicTitle(time.ToLongTimeString());
-                    //MyAPIGateway.Utilities.ShowMessage("Console Test","Most Recent Time " + _mostRecentText);
-                    comm.ShowPublicTextOnScreen();
-                }
-
-                comm.WritePublicText(_mostRecentText);
-                comm.WritePublicTitle(_mostRecentTime.ToLongTimeString());
-                comm.ShowPublicTextOnScreen();
-               
-
-                
+              
+                  
             }
+            if (_commPanel.GetPublicText() != _mostRecentText)
+            {
+                _mostRecentTime = time;
+                _mostRecentText = _commPanel.GetPublicText();
+                _commPanel.WritePublicTitle(time.Ticks.ToString());
+                //MyAPIGateway.Utilities.ShowMessage("Console Test","Most Recent Time " + _mostRecentText);
+                _commPanel.ShowPublicTextOnScreen();
+            }
+
+            
 
         }
 

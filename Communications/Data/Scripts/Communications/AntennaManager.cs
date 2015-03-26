@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using Sandbox.Common.Components;
 using Sandbox.Common.ObjectBuilders;
@@ -8,6 +9,7 @@ using Sandbox.ModAPI.Ingame;
 using VRageMath;
 using IMyCubeBlock = Sandbox.ModAPI.IMyCubeBlock;
 using IMyCubeGrid = Sandbox.ModAPI.IMyCubeGrid;
+using IMyFunctionalBlock = Sandbox.ModAPI.Ingame.IMyFunctionalBlock;
 using IMySlimBlock = Sandbox.ModAPI.IMySlimBlock;
 using IMyTerminalBlock = Sandbox.ModAPI.IMyTerminalBlock;
 
@@ -40,7 +42,7 @@ namespace Communications
                             grid.GetBlocks(_commPortList,
                                 x =>
                                     x.FatBlock is IMyTextPanel &&
-                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") && (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Port") && IsActive(x.FatBlock))
+                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") && (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Port") && IsActive((IMyFunctionalBlock)x.FatBlock))
                                 ; //Checks if it is an active Comm that contains portal
                     }
                     catch
@@ -54,7 +56,7 @@ namespace Communications
                                 x =>
                                     x.FatBlock is IMyTextPanel &&
                                     (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") &&
-                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Main") && IsActive(x.FatBlock));
+                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Main") && IsActive((IMyFunctionalBlock)x.FatBlock));
                         //Checks if it is an active Comm that contains portal
                     }
                     catch
@@ -64,7 +66,7 @@ namespace Communications
                     try //try this out because if wrong it breaks game
                     {
                         if (grid != null)
-                            grid.GetBlocks(_workingAntennas, x => x.FatBlock is IMyRadioAntenna && IsActive(x.FatBlock));
+                            grid.GetBlocks(_workingAntennas, x => x.FatBlock is IMyRadioAntenna && IsActive((IMyFunctionalBlock) x.FatBlock));
                         //Checks if it is an active Comm that contains portal
                     }
                     catch
@@ -74,7 +76,7 @@ namespace Communications
                     try //try this out because if wrong it breaks game
                     {
                         if (grid != null)
-                            grid.GetBlocks(_workingAntennaTurrets, x => x.FatBlock is IMyLaserAntenna && IsActive(x.FatBlock));
+                            grid.GetBlocks(_workingAntennaTurrets, x => x.FatBlock is IMyLaserAntenna && IsActive((IMyFunctionalBlock) x.FatBlock));
                         //Checks if it is an active Comm that contains portal
                     }
                     catch
@@ -144,7 +146,7 @@ namespace Communications
 
             //adding the antennas to a list
             foreach(var antenna in availableAntennas)
-               commSlimBlockList.AddRange(_commPortList.Where(comm1 => comm1.FatBlock.GetTopMostParent().EntityId == antenna.GetTopMostParent().EntityId ));
+               commSlimBlockList.AddRange(_commPortList.Where(comm1 => comm1.FatBlock.GetTopMostParent().EntityId == antenna.GetTopMostParent().EntityId || comm1.FatBlock.GetTopMostParent().EntityId == referenceGrid.EntityId));
             
             //polymorphism is great
             commSlimBlockList.ForEach(comm => commList.Add(comm.FatBlock as IMyTextPanel));
@@ -154,9 +156,9 @@ namespace Communications
         }
 
 
-        private static bool IsActive(IMyCubeBlock comm) //checks whether a portal is active or not
+        private static bool IsActive(IMyFunctionalBlock comm) //checks whether a portal is active or not
         {
-            return comm.IsWorking || comm.IsFunctional;
+            return comm.IsFunctional && comm.Enabled;
         }
     }
 }
