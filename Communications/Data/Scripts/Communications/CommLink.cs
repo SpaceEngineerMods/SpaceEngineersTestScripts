@@ -140,6 +140,7 @@ namespace Communications //teleporter namespace
                                     ValidAsteroids.Add(asteroid1);
                                     List<IMyEntity> asteroid1ChildernList = new List<IMyEntity>();
                                     asteroid1.GetChildren(asteroid1ChildernList, x => x != null);
+                                    
                                     asteroid1ChildernList.ForEach(asteroidchildren => OrePositions.Add(asteroidchildren.GetPosition()));
 
                                     byte[] test;

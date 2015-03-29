@@ -171,7 +171,7 @@ namespace Communications
             }
             
             channel = name.Substring(index, (name.Length - index));
-            MyAPIGateway.Utilities.ShowMessage("test", channel + " " + name);
+            //MyAPIGateway.Utilities.ShowMessage("test", channel + " " + name);
             return channel;
         }
 
