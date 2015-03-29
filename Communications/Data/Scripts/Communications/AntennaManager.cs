@@ -122,7 +122,7 @@ namespace Communications
             return connections;
         }
 
-        public List<IMyTextPanel> GetAvailableCommPortList(Sandbox.ModAPI.IMyCubeGrid referenceGrid)
+        public List<IMyTextPanel> GetAvailableCommPortList(IMyCubeGrid referenceGrid,String channel)
         {
             //Update the lists
             BlocksUpdate();
@@ -146,15 +146,34 @@ namespace Communications
 
             //adding the antennas to a list
             foreach(var antenna in availableAntennas)
-               commSlimBlockList.AddRange(_commPortList.Where(comm1 => comm1.FatBlock.GetTopMostParent().EntityId == antenna.GetTopMostParent().EntityId || comm1.FatBlock.GetTopMostParent().EntityId == referenceGrid.EntityId));
+               commSlimBlockList.AddRange(_commPortList.Where(comm1 => (comm1.FatBlock.GetTopMostParent().EntityId == antenna.GetTopMostParent().EntityId || comm1.FatBlock.GetTopMostParent().EntityId == referenceGrid.EntityId)  && GetChannel(comm1.FatBlock as IMyTerminalBlock) == channel));
             
             //polymorphism is great
             commSlimBlockList.ForEach(comm => commList.Add(comm.FatBlock as IMyTextPanel));
+
 
             return commList;
 
         }
 
+
+        public String GetChannel(IMyTerminalBlock commpanel)
+        {
+            var name = commpanel.DisplayNameText;
+            var index = 0;
+            var channel = "";
+           
+            index = name.IndexOf("-");
+
+            if (index <= 0)
+            {
+                return channel;
+            }
+            
+            channel = name.Substring(index, (name.Length - index));
+            MyAPIGateway.Utilities.ShowMessage("test", channel + " " + name);
+            return channel;
+        }
 
         private static bool IsActive(IMyFunctionalBlock comm) //checks whether a portal is active or not
         {

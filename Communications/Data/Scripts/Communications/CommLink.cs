@@ -57,6 +57,7 @@ namespace Communications //teleporter namespace
 
             _antennaManager = new AntennaManager();
             _mostRecentTime = DateTime.MinValue;
+            OrePositions = new List<Vector3>();
         }
         public override void UpdateAfterSimulation()
         {
@@ -98,8 +99,6 @@ namespace Communications //teleporter namespace
                 ValidAsteroids.Clear();
                 try
                 {
-
-
                     MyAPIGateway.Entities.GetEntities(Asteroids, x => x is IMyVoxelMap);
                     var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid);
                     ship.GetBlocks(OreDetectors, x =>
@@ -132,10 +131,29 @@ namespace Communications //teleporter namespace
                             {
                                 if ((asteroid1 as IMyVoxelMap).DoOverlapSphereTest(Radius, asteroidPosition))
                                 {
+                                    
+                                    IMyStorage testStorage = (asteroid1 as IMyVoxelMap).Storage;
+                                    
+                                    MyAPIGateway.Utilities.ShowMessage("test", (asteroid1 as IMyVoxelMap).StorageName);
+                                    
                                     MyAPIGateway.Utilities.ShowMessage("Test 3", OreDetectors.Count.ToString());
                                     ValidAsteroids.Add(asteroid1);
-                                    //OrePositions.Add(asteroid1.GetPosition());
+                                    List<IMyEntity> asteroid1ChildernList = new List<IMyEntity>();
+                                    asteroid1.GetChildren(asteroid1ChildernList, x => x != null);
+                                    asteroid1ChildernList.ForEach(asteroidchildren => OrePositions.Add(asteroidchildren.GetPosition()));
+
+                                    byte[] test;
+                                    testStorage.Save(out test);
+                                    int i = 0;
+                                    foreach (var x in test)
+                                    {
+                                        MyAPIGateway.Utilities.ShowMessage("test byte" + i, x.ToString());
+                                        i++;
+                                    }
+                                  
                                     
+                                    MyAPIGateway.Utilities.ShowMessage("Child Test", testStorage.Size.ToString());
+                                   
                                 }
                             }
                         }
@@ -144,7 +162,7 @@ namespace Communications //teleporter namespace
                     returnStr = ValidAsteroids.Aggregate(returnStr,
                         (current, asteroid) => current + (asteroid.WorldAABB.Center.ToString() + "\n "));
                     returnStr += "\n\n";
-                    //returnStr = OrePositions.Aggregate(returnStr, (current, ore) => current + ore.ToString());
+                    returnStr = OrePositions.Aggregate(returnStr, (current, ore) => current + ore.ToString() + " ore");
                     _commPanel.WritePublicText(returnStr);
                     _commPanel.ShowPublicTextOnScreen();
                     _commPanel.SetValueFloat("FontSize", 1.0f);
@@ -185,7 +203,7 @@ namespace Communications //teleporter namespace
         private void CommPort()
         {
             var time = DateTime.Now;
-            var commportlist = _antennaManager.GetAvailableCommPortList(_commPanel.GetTopMostParent() as Sandbox.ModAPI.IMyCubeGrid);
+            var commportlist = _antennaManager.GetAvailableCommPortList(_commPanel.GetTopMostParent() as IMyCubeGrid , _antennaManager.GetChannel(_commPanel as IMyTerminalBlock));
             
             
            
@@ -273,7 +291,7 @@ namespace Communications //teleporter namespace
 
         }
       
-
+        
         public override MyObjectBuilder_EntityBase GetObjectBuilder(bool copy = false) // Does nothing
         {
             return _objectBuilder;
