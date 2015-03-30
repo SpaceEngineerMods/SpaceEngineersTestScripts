@@ -11,6 +11,7 @@ using Sandbox.Game.Screens.Helpers;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
 using Sandbox.ModAPI.Interfaces;
+using VRage.Voxels;
 using VRageMath;
 using IMyCubeBlock = Sandbox.ModAPI.IMyCubeBlock;
 using IMyCubeGrid = Sandbox.ModAPI.IMyCubeGrid;
@@ -133,9 +134,13 @@ namespace Communications //teleporter namespace
                                 {
                                     
                                     IMyStorage testStorage = (asteroid1 as IMyVoxelMap).Storage;
+
+                                    MyStorageDataCache testCache = new MyStorageDataCache();
                                     
+                                    
+
                                     MyAPIGateway.Utilities.ShowMessage("test", (asteroid1 as IMyVoxelMap).StorageName);
-                                    
+
                                     MyAPIGateway.Utilities.ShowMessage("Test 3", OreDetectors.Count.ToString());
                                     ValidAsteroids.Add(asteroid1);
                                     List<IMyEntity> asteroid1ChildernList = new List<IMyEntity>();
@@ -145,15 +150,21 @@ namespace Communications //teleporter namespace
 
                                     byte[] test;
                                     testStorage.Save(out test);
-                                    int i = 0;
-                                    foreach (var x in test)
+                                    testCache.Resize(testStorage.Size);
+                                    testStorage.ReadRange(testCache,MyStorageDataTypeFlags.All,1,new Vector3I(1,1,1),testStorage.Size );
+                                    
+                                    MyAPIGateway.Utilities.ShowMessage("Test 4", testCache.SizeLinear.ToString());
+                                    
+                                    for (int x = 0 ; x <= testCache.SizeLinear;x++)
                                     {
-                                        MyAPIGateway.Utilities.ShowMessage("test byte" + i, x.ToString());
-                                        i++;
+                                        //MyAPIGateway.Utilities.ShowMessage("test byte" + i, x.ToString());
+                                        if (testCache.Material(x) != 0 && testCache.Material(x) != 2)
+                                        MyAPIGateway.Utilities.ShowMessage("test Cache" , testCache.Material(x).ToString());
+                                        
                                     }
                                   
                                     
-                                    MyAPIGateway.Utilities.ShowMessage("Child Test", testStorage.Size.ToString());
+                                    MyAPIGateway.Utilities.ShowMessage("Asteroid Size", testStorage.Size.ToString());
                                    
                                 }
                             }
