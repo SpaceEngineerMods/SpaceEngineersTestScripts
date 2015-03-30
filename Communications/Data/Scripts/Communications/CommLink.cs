@@ -151,18 +151,25 @@ namespace Communications //teleporter namespace
                                     byte[] test;
                                     testStorage.Save(out test);
                                     testCache.Resize(testStorage.Size);
-                                    testStorage.ReadRange(testCache,MyStorageDataTypeFlags.All,1,new Vector3I(1,1,1),testStorage.Size );
+                                    testStorage.ReadRange(testCache,MyStorageDataTypeFlags.All,4,new Vector3I(0,0,0),testStorage.Size );
                                     
                                     MyAPIGateway.Utilities.ShowMessage("Test 4", testCache.SizeLinear.ToString());
                                     
-                                    for (int x = 0 ; x <= testCache.SizeLinear;x++)
+                                    for (int x = 0 ; x <= testCache.Size3D.X;x+=16)
                                     {
-                                        //MyAPIGateway.Utilities.ShowMessage("test byte" + i, x.ToString());
-                                        if (testCache.Material(x) != 0 && testCache.Material(x) != 2)
-                                        MyAPIGateway.Utilities.ShowMessage("test Cache" , testCache.Material(x).ToString());
-                                        
+
+                                        for (int y = 0; y <= testCache.Size3D.Y; y+=16)
+                                        {
+                                            for (int z = 0; z <= testCache.Size3D.Z; z+=16)
+                                            {
+                                                //MyAPIGateway.Utilities.ShowMessage("test byte" + i, x.ToString());
+                                                var voxel = new Vector3I(x, y, z);
+                                                MyAPIGateway.Utilities.ShowMessage("test Cache",
+                                                    testCache.Material(ref voxel).ToString());
+                                            }
+                                        }
                                     }
-                                  
+                                
                                     
                                     MyAPIGateway.Utilities.ShowMessage("Asteroid Size", testStorage.Size.ToString());
                                    
