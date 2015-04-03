@@ -1,13 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using Sandbox.Common.Components;
-using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using Sandbox.ModAPI.Ingame;
-using VRageMath;
-using IMyCubeBlock = Sandbox.ModAPI.IMyCubeBlock;
 using IMyCubeGrid = Sandbox.ModAPI.IMyCubeGrid;
 using IMyFunctionalBlock = Sandbox.ModAPI.Ingame.IMyFunctionalBlock;
 using IMySlimBlock = Sandbox.ModAPI.IMySlimBlock;
@@ -19,12 +14,12 @@ namespace Communications
     //Controls the cool down of the portals
     public class AntennaManager //creates teleportation manager
     {
-        private List<IMySlimBlock> _commMainList = new List<IMySlimBlock>(); //create new list of blocks
-        private List<IMySlimBlock> _commPortList = new List<IMySlimBlock>(); //create new list of blocks
-        private List<IMySlimBlock> _workingAntennas = new List<IMySlimBlock>(); //create new list of blocks
-        private List<IMySlimBlock> _workingAntennaTurrets = new List<IMySlimBlock>(); //create new list of blocks
+        private readonly List<IMySlimBlock> _commMainList = new List<IMySlimBlock>(); //create new list of blocks
+        private readonly List<IMySlimBlock> _commPortList = new List<IMySlimBlock>(); //create new list of blocks
+        private readonly List<IMySlimBlock> _workingAntennas = new List<IMySlimBlock>(); //create new list of blocks
+        private readonly List<IMySlimBlock> _workingAntennaTurrets = new List<IMySlimBlock>(); //create new list of blocks
 
-        private void BlocksUpdate()
+        private void BlocksUpdate()//update lists of antennas and antenna turrets, returning those that are functional
         {
             {
                 var hash = new HashSet<IMyEntity>(); //Creates new IMyEntity hash set
@@ -42,7 +37,7 @@ namespace Communications
                             grid.GetBlocks(_commPortList,
                                 x =>
                                     x.FatBlock is IMyTextPanel &&
-                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") && (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Port") && IsActive((IMyFunctionalBlock)x.FatBlock))
+                                    ((IMyTerminalBlock) x.FatBlock).CustomName.Contains("Comm") && (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Port") && IsActive((IMyFunctionalBlock)x.FatBlock))
                                 ; //Checks if it is an active Comm that contains portal
                     }
                     catch
@@ -55,7 +50,7 @@ namespace Communications
                             grid.GetBlocks(_commMainList,
                                 x =>
                                     x.FatBlock is IMyTextPanel &&
-                                    (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Comm") &&
+                                    ((IMyTerminalBlock) x.FatBlock).CustomName.Contains("Comm") &&
                                     (x.FatBlock as IMyTerminalBlock).CustomName.Contains("Main") && IsActive((IMyFunctionalBlock)x.FatBlock));
                         //Checks if it is an active Comm that contains portal
                     }
@@ -87,37 +82,37 @@ namespace Communications
             } //end of commlist creation
         }
 
-        public IEnumerable<HashSet<IMyEntity>> GetValidConnections()
+        public IEnumerable<HashSet<IMyEntity>> GetValidConnections()//Gets the valid connections; what antennas are linked to what other antennas (all are one way)
         {
             BlocksUpdate();
             var connections = new HashSet<HashSet<IMyEntity>>(); //Creates new IMyEntity hash set
             
-            foreach (var antenna in _workingAntennas)
+            foreach (var antenna in _workingAntennas)//for every functional antenna
             {
                
-                var subConnections = new HashSet<IMyEntity> {antenna.FatBlock};
-                var position = antenna.FatBlock.GetPosition();
+                var subConnections = new HashSet<IMyEntity> {antenna.FatBlock};//create new set of subconnections
+                var position = antenna.FatBlock.GetPosition();//get position of antenna
                 var radius = ((IMyRadioAntenna) antenna.FatBlock).Radius;
 
                 var antenna1 = antenna;
                 foreach (var subAntenna in _workingAntennas.Where(subAntenna => (position - (subAntenna.FatBlock.GetPosition())).Length() <= radius &&
                                                                                 antenna1.FatBlock.GetTopMostParent().EntityId != subAntenna.FatBlock.GetTopMostParent().EntityId))
-                {
+                {//above if an antenna is within range of another antenna, it is added to a subconnection
                     subConnections.Add(subAntenna.FatBlock);
                 }
                 connections.Add(subConnections);
             }
 
-            foreach (var turret in _workingAntennaTurrets)
+            foreach (var turret in _workingAntennaTurrets)//check for laser turrets
             {
-                var subConnections = new HashSet<IMyEntity> {turret.FatBlock};
+                var subConnections = new HashSet<IMyEntity> {turret.FatBlock};//new hashset of sub connections
 
-                foreach (var subTurret in _workingAntennaTurrets)
+                foreach (var subTurret in _workingAntennaTurrets)//for every functional laser turret
                 {
-                    if (((IMyLaserAntenna) turret.FatBlock).TargetCoords == (subTurret.FatBlock.GetPosition()))
-                        subConnections.Add(subTurret.FatBlock);
+                    if (((IMyLaserAntenna) turret.FatBlock).TargetCoords == (subTurret.FatBlock.GetPosition()))//if it knows where a target ship is
+                        subConnections.Add(subTurret.FatBlock);//add it to subconnections
                 }
-                connections.Add(subConnections);
+                connections.Add(subConnections);//combine subconnections with connections
             }
             return connections;
         }
@@ -127,7 +122,7 @@ namespace Communications
             //Update the lists
             BlocksUpdate();
            
-            // get the antenna connecitons
+            // get the antenna connections
             var antennaConnections = GetValidConnections();
 
             //find to see what conneciton the antenna is connected to should only  return a single list
@@ -157,13 +152,12 @@ namespace Communications
         }
 
 
-        public String GetChannel(IMyTerminalBlock commpanel)
+        public String GetChannel(IMyTerminalBlock commpanel)//Detects whether or not two comm panels are on the same channel, depends on whether or not they have the same console name
         {
             var name = commpanel.DisplayNameText;
-            var index = 0;
             var channel = "";
            
-            index = name.IndexOf("-");
+            var index = name.IndexOf("-", StringComparison.Ordinal);
 
             if (index <= 0)
             {
@@ -175,7 +169,7 @@ namespace Communications
             return channel;
         }
 
-        private static bool IsActive(IMyFunctionalBlock comm) //checks whether a portal is active or not
+        private static bool IsActive(IMyFunctionalBlock comm) //checks whether a turret is active or not
         {
             return comm.IsFunctional && comm.Enabled;
         }
