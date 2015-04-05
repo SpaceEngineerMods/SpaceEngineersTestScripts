@@ -23,9 +23,9 @@ namespace Communications //teleporter namespace
     public class CommLink : MyGameLogicComponent
     //class CommLink, calls from game logic, further describes what a CommLink is
     {
-        public List<IMySlimBlock> OreDetectors = new List<IMySlimBlock>(); //create new list of blocks
-        public HashSet<IMyEntity> Asteroids = new HashSet<IMyEntity>(); //create new list of blocks
-        public HashSet<IMyEntity> ValidAsteroids = new HashSet<IMyEntity>(); //create new list of blocks
+        private readonly List<IMySlimBlock> _oreDetectors = new List<IMySlimBlock>(); //create new list of blocks
+        private readonly HashSet<IMyEntity> _asteroids = new HashSet<IMyEntity>(); //create new list of blocks
+        private readonly HashSet<IMyEntity> _validAsteroids = new HashSet<IMyEntity>(); //create new list of blocks
 
         private String _mostRecentText;// Timers for the comm panel
         private DateTime _mostRecentTime;
@@ -91,49 +91,86 @@ namespace Communications //teleporter namespace
         
         private void OreDetection()//Supposed to return a list of Asteroids, Ore positions and materials, WIP
         {
+
             String storageStr = null;//Storage String for ore values
-                OreDetectors.Clear();//resets
-                ValidAsteroids.Clear();
-                Asteroids.Clear();
-            var oreList = new List<AsteroidManager.OreCoord>();//Create new Ore List, to receive or list from Asteroid Manager Function
-            MyAPIGateway.Entities.GetEntities(Asteroids, x => x is IMyVoxelMap); //getting asteroids
+                _oreDetectors.Clear();//resets
+                _validAsteroids.Clear();
+                _asteroids.Clear();
+
+            MyAPIGateway.Entities.GetEntities(_asteroids, x => x is IMyVoxelMap); //getting asteroids
 
             var ship = (_commPanel.GetTopMostParent() as IMyCubeGrid); //getting our ship
 
-            if (ship != null)
-                ship.GetBlocks(OreDetectors, x => //getting ore detectors from ship
+            try
+            {
+
+
+                if (ship != null)
+                    ship.GetBlocks(_oreDetectors, x => //getting ore detectors from ship
+                    {
+
+                        var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
+
+                        return myTerminalBlock != null && (x.FatBlock is IMyOreDetector);
+
+                    });
+            }
+            catch
+            {
+                MyAPIGateway.Utilities.ShowMessage("Error: ", " Error Trying to find valid Ore detectors");
+            }
+
+            MyAPIGateway.Utilities.ShowMessage("Ore:", " Detector Count " + _oreDetectors.Count);//Debug or detectors
+            try
+            {
+
+
+                foreach (var asteroid1 in from oreDetector in _oreDetectors
+                    //For every ore Detector and Every Asteroid
+
+                    let myOreDetector = oreDetector.FatBlock as IMyOreDetector
+                    //what Ore Detector is
+
+                    let radius = myOreDetector.Range
+                    //Get Radius of Ore Detectors
+
+                    let asteroidPosition = myOreDetector.GetPosition()
+                    //Position of Asteroid
+
+                    from asteroid1 in
+                        _asteroids.Where( //If asteroid is less that 10000 M, do the more computationally extensive test
+                            asteroid1 => (asteroidPosition - asteroid1.GetPosition()).Length() <= 10000)
+                            //of whether or not it is actually
+                            .Where(asteroid1 => ((IMyVoxelMap) asteroid1).DoOverlapSphereTest(radius, asteroidPosition))
+                            // in range
+                            .Cast<IMyVoxelMap>()
+                    select asteroid1)
+
                 {
 
-                    var myTerminalBlock = x.FatBlock as IMyTerminalBlock;
+                    _validAsteroids.Add(asteroid1); //add the asteroid to valid asteroids if it passed the test
+                    var oreList = AsteroidManager.GetGrid(asteroid1);
+                    //Create new Ore List, to receive or list from Asteroid Manager Function
+                    storageStr = oreList.Aggregate(storageStr, //adds next ore list to storage string
+                        (current, ore) => current + (ore.VMaterial + " " + ore.OrePos + "\n"));
 
-                    return myTerminalBlock != null && (x.FatBlock is IMyOreDetector);
-
-                });
-            MyAPIGateway.Utilities.ShowMessage("Ore:", " Detector Count " + OreDetectors.Count);//Debug or detectors
-            foreach (var asteroid1 in from oreDetector in OreDetectors//For every ore Detector and Every Asteroid
-                let myOreDetector = oreDetector.FatBlock as IMyOreDetector//what Ore Detector is
-                let radius = myOreDetector.Range//Get Radius of Ore Detectors
-                let asteroidPosition = oreDetector.FatBlock.GetPosition()//Position of Asteroid
-                from asteroid1 in Asteroids.Where(//If asteroid is less that 10000 M, do the more computationally extensive test
-                    asteroid1 => (asteroidPosition - asteroid1.GetPosition()).Length() <= 10000)//of whether or not it is actually
-                    .Where(asteroid1 => ((IMyVoxelMap) asteroid1).DoOverlapSphereTest(radius, asteroidPosition))// in range
-                    .Cast<IMyVoxelMap>()
-                select asteroid1)
-            {
-                ValidAsteroids.Add(asteroid1);//add the asteroid to valid asteroids if it passed the test
-                oreList = AsteroidManager.GetGrid(asteroid1);//Get ore list from antenna manager, that class is new and DOES NOT WORK
-                storageStr = oreList.Aggregate(storageStr,//adds next ore list to storage string
-                (current, ore) => current + (ore.VMaterial + " " + ore.OrePos + "\n"));
+                }
             }
+            catch
+            {
+                MyAPIGateway.Utilities.ShowMessage("Error: ", " Error Finding Valid Asteriods");
+            }
+
             var returnStr = "\n\n";
-            MyAPIGateway.Utilities.ShowMessage("Ore:", " Valid Asteroids " + ValidAsteroids.Count);//Debug Script
-            returnStr = ValidAsteroids.Aggregate(returnStr,
+            MyAPIGateway.Utilities.ShowMessage("Ore:", " Valid Asteroids " + _validAsteroids.Count);//Debug Script
+            returnStr = _validAsteroids.Aggregate(returnStr,
                 (current, asteroid) => current + (asteroid.WorldAABB.Center.ToString() + "\n "));//Add asteroids to the main string
             returnStr += "\n\n";
             returnStr += storageStr;//add ores to the main string
             _commPanel.WritePublicText(returnStr);//write text on screen
             _commPanel.ShowPublicTextOnScreen();//show the screen
             _commPanel.SetValueFloat("FontSize", 1.0f);//font
+
         }
     
            private void GetAntenna()//asks for the list of all connections
@@ -209,8 +246,6 @@ namespace Communications //teleporter namespace
     
         private void ShipInfo()//Ship info
         {
-            var fullString = "";//setting up string
-
             _commPanel.GetTopMostParent().Physics.UpdateAccelerations();//update the physics before we call it up
 
             var shipPosition = _commPanel.GetTopMostParent().GetPosition();//returns ship position
@@ -242,8 +277,8 @@ namespace Communications //teleporter namespace
                     Math.Round(Math.Atan2(-shipAngle.M31, Math.Sqrt(Math.Pow(shipAngle.M32, 2) + Math.Pow(shipAngle.M33, 2))), 4),
                 Math.Round(Math.Atan2(shipAngle.M21, shipAngle.M11), 4));//calculate angles (all from pi to -pi) and round to 4
 
-            fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle "
-                + radianAngle + "\n Ship Rot " + shipRotation + "\n Ship Rot Accel " + shipRotationAcceleration;//convert to string
+            var fullString = "Ship Pos " + shipPosition + "\n Ship Vel " + shipVelocity + "\n Ship Accel " + shipAcceleration + "\n Ship Angle "
+                                + radianAngle + "\n Ship Rot " + shipRotation + "\n Ship Rot Accel " + shipRotationAcceleration;
 
             _commPanel.WritePublicText(fullString);//write the text
             _commPanel.ShowPublicTextOnScreen();//update screen
